@@ -1,0 +1,64 @@
+# ===== Python (tools/, tests/) =====
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.egg-info/
+build/
+dist/
+/files
+
+# uv: lock-файл не нужен, зависимостей у проекта нет (только dev-инструменты)
+# Если хотите воспроизводимости dev-окружения, удалите строку ниже и закоммитьте uv.lock
+uv.lock
+
+# ===== Node (node --test не требует установки пакетов) =====
+node_modules/
+npm-debug.log*
+package-lock.json
+
+# ===== Playwright / e2e =====
+test-results/
+playwright-report/
+playwright/.cache/
+tests/e2e/screenshots/
+tests/e2e/__screenshots__/
+*.trace.zip
+
+# ===== Редакторы и IDE =====
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# ===== ОС =====
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+desktop.ini
+
+# ===== Секреты и локальные настройки =====
+.env
+.env.*
+!.env.example
+*.local
+
+# ===== Временные и служебные файлы =====
+*.log
+*.tmp
+*.bak
+.cache/
+*.patch
+
+# Важно: НЕ добавляйте в .gitignore эти файлы - GitHub Pages должен их раздавать:
+#   content/days.json   (генерируется tools/build_index.py, но хранится в репозитории)
+#   icons/, manifest.json, service-worker.js

@@ -1,0 +1,26 @@
+{
+  "pageTitle": "Меню на {count} {days}",
+  "title": "Меню клиента",
+  "subtitle": "Полное меню на {count} {days} · Завтрак, обед, ужин и перекус для каждого дня",
+  "sidebarTitle": "Меню {count} {days}",
+  "mobileDefault": "Меню на {count} {days}",
+  "mealTypes": {
+    "breakfast": {
+      "icon": "🌅",
+      "label": "Завтрак"
+    },
+    "lunch": {
+      "icon": "🍽️",
+      "label": "Обед"
+    },
+    "dinner": {
+      "icon": "🌙",
+      "label": "Ужин"
+    },
+    "snack": {
+      "icon": "🍓",
+      "label": "Перекус"
+    }
+  },
+  "collapseAfter": 5
+}

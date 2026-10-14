@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Меню клиента</title>
+<meta name="theme-color" content="#2f7a4f">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Меню">
+<link rel="stylesheet" href="shared/css/main.css">
+</head>
+<body>
+
+<a class="skip-link" href="#content">Перейти к содержимому</a>
+
+<!-- Нижняя панель для мобильных устройств: навигация по дням, поиск-триггер, тема -->
+<div id="mobile-topbar">
+  <button id="menu-toggle" aria-label="Открыть меню дней" aria-expanded="false" aria-controls="sidebar">☰</button>
+  <button id="day-prev" class="day-nav-btn" aria-label="Предыдущий день">‹</button>
+  <span id="mobile-current-day" aria-live="polite">Меню</span>
+  <button id="day-next" class="day-nav-btn" aria-label="Следующий день">›</button>
+  <button id="theme-toggle" class="theme-toggle-btn" aria-label="Переключить тему">🌙</button>
+</div>
+
+<!-- Оверлей при открытом мобильном меню -->
+<div id="sidebar-overlay"></div>
+
+<nav id="sidebar" aria-label="Навигация по дням меню">
+  <h1>Меню <button class="theme-toggle-btn" id="theme-toggle-desktop" aria-label="Переключить тему">🌙</button></h1>
+  <label for="search-box" style="position:absolute;left:-9999px;">Поиск по дню или блюду</label>
+  <input type="text" id="search-box" placeholder="Поиск по дню или блюду..." autocomplete="off">
+  <div id="search-status" role="status" aria-live="polite"></div>
+  <div id="nav-links"></div>
+  <div id="no-results" role="status">Ничего не найдено</div>
+</nav>
+
+<div id="content">
+  <div id="top-header">
+    <h1>Меню клиента</h1>
+    <p>Полное меню · Завтрак, обед, ужин и перекус для каждого дня</p>
+  </div>
+
+<div id="today-banner" aria-live="polite"></div>
+
+<div id="days-end" aria-hidden="true" style="height:60vh;"></div>
+
+
+
+</div>
+
+<div id="swipe-toast" aria-hidden="true"></div>
+<button id="back-to-top" title="Наверх" aria-label="Наверх страницы">↑</button>
+
+<noscript><p style="padding:16px">Для работы меню нужен включённый JavaScript.</p></noscript>
+<script type="module" src="shared/js/app.js"></script>
+</body>
+</html>

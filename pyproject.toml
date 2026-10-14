@@ -1,0 +1,11 @@
+[project]
+name = "food-flow"
+version = "2.1.0"
+requires-python = ">=3.11"
+
+[dependency-groups]
+dev = ["pytest>=8", "playwright>=1.45", "pillow>=10"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--ignore=tests/e2e"
