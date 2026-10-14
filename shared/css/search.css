@@ -1,0 +1,73 @@
+/* Стили интерфейса поиска вынесены отдельно от общей оболочки. */
+.search-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 12px 16px;
+}
+#search-box {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  margin: 0;
+}
+#search-clear {
+  flex: 0 0 34px;
+  width: 34px;
+  height: 36px;
+  border: 1px solid rgba(255, 255, 255, .25);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, .12);
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+#search-clear:hover { background: rgba(255, 255, 255, .22); }
+#search-clear[hidden],
+#nav-links[hidden],
+#search-results[hidden],
+#no-results[hidden],
+.nav-link[hidden] {
+  display: none !important;
+}
+#no-results:not([hidden]) { display: block; }
+#search-results { padding: 0 8px; }
+.sr-card {
+  padding: 8px 10px;
+  border-radius: 8px;
+  overflow-wrap: anywhere;
+}
+.sr-card + .sr-card { border-top: 1px solid rgba(255, 255, 255, .12); }
+.sr-card:hover { background: rgba(255, 255, 255, .06); }
+.sr-day {
+  display: block;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.sr-day:hover { text-decoration: underline; }
+.sr-hit {
+  margin: 4px 0 0;
+  color: #d8e8de;
+  font-size: 12px;
+  line-height: 1.4;
+  opacity: .9;
+}
+.sr-more {
+  margin: 8px 10px;
+  color: #d8e8de;
+  font-size: 12px;
+}
+tr.search-hit { background: color-mix(in srgb, var(--accent) 26%, transparent); }
+tr.search-hit td:first-child { font-weight: 600; }
+.dish-name.search-hit {
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--accent) 26%, transparent);
+}
+@media (max-width: 768px) {
+  .search-control { margin: 8px 16px 6px; }
+  #search-box { margin: 0; }
+}

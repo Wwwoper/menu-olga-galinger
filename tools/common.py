@@ -1,4 +1,5 @@
 """Общие функции для tools/*.py (только стандартная библиотека)."""
+
 from __future__ import annotations
 
 import json
@@ -27,11 +28,29 @@ def sort_key(day_id: str) -> tuple[int, int]:
 
 
 def normalize_search(text: str) -> str:
-    """Правило data-search из legacy: нижний регистр, всё кроме букв, цифр,
-    / – - + заменяется пробелом, пробелы схлопываются."""
-    text = text.lower()
-    text = re.sub(r"[^\w/–\-+]+", " ", text)
+    """Одинаково нормализует текст для индекса: регистр, ё/е и разделители."""
+    text = text.lower().replace("ё", "е")
+    text = re.sub(r"[^\w–\-+]+", " ", text)
     return re.sub(r"\s+", " ", text).strip()
+
+
+def meal_index(day: dict) -> list[dict]:
+    """Строит поисковые записи приёмов пищи, сохраняя исходные названия."""
+    meals = []
+    for meal in day["meals"]:
+        dish = meal.get("dish")
+        meals.append(
+            {
+                "t": meal["type"],
+                "d": normalize_search(dish) if dish else None,
+                "dn": dish,
+                "i": [
+                    {"s": normalize_search(ingredient["name"]), "n": ingredient["name"]}
+                    for ingredient in meal["ingredients"]
+                ],
+            }
+        )
+    return meals
 
 
 def search_string(day: dict) -> str:
@@ -130,6 +149,7 @@ def build_index(days: list[dict]) -> dict:
             "label": d["label"],
             "file": f"days/{d['id']}.json",
             "search": search_string(d),
+            "meals": meal_index(d),
         }
         for i, d in enumerate(days)
     ]

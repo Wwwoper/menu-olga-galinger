@@ -12,6 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Меню">
 <link rel="stylesheet" href="shared/css/main.css">
+<link rel="stylesheet" href="shared/css/search.css">
 </head>
 <body>
 
@@ -31,11 +32,15 @@
 
 <nav id="sidebar" aria-label="Навигация по дням меню">
   <h1>Меню <button class="theme-toggle-btn" id="theme-toggle-desktop" aria-label="Переключить тему">🌙</button></h1>
-  <label for="search-box" style="position:absolute;left:-9999px;">Поиск по дню или блюду</label>
-  <input type="text" id="search-box" placeholder="Поиск по дню или блюду..." autocomplete="off">
+  <label for="search-box" style="position:absolute;left:-9999px;">Поиск по дню, блюду или ингредиенту</label>
+  <div class="search-control">
+    <input type="search" id="search-box" placeholder="Блюдо или ингредиент..." autocomplete="off" enterkeyhint="search" aria-controls="search-results">
+    <button id="search-clear" type="button" aria-label="Очистить поиск" hidden>×</button>
+  </div>
   <div id="search-status" role="status" aria-live="polite"></div>
+  <div id="search-results" role="region" aria-label="Результаты поиска" hidden></div>
   <div id="nav-links"></div>
-  <div id="no-results" role="status">Ничего не найдено</div>
+  <div id="no-results" role="status" hidden>Ничего не найдено</div>
 </nav>
 
 <div id="content">

@@ -3,6 +3,7 @@ import { loadDay } from './store.js';
 import { renderMeals } from './render.js';
 import { initFeatures } from './features.js';
 import { getPinned } from './state.js';
+import { buildSearcher, normalize, parseQuery } from './search.js';
 
 const { meta, index, DAY_IDS } = await initShell();
 const links = Array.from(document.querySelectorAll('.nav-link'));
@@ -10,6 +11,10 @@ const sections = Array.from(document.querySelectorAll('.day-section'));
 const searchBox = document.getElementById('search-box');
 const noResults = document.getElementById('no-results');
 const searchStatus = document.getElementById('search-status');
+const navLinks = document.getElementById('nav-links');
+const searchResults = document.getElementById('search-results');
+const searchClear = document.getElementById('search-clear');
+const searcher = buildSearcher(index);
 const sidebar = document.getElementById('sidebar');
 const overlay = document.getElementById('sidebar-overlay');
 const menuToggle = document.getElementById('menu-toggle');
@@ -22,39 +27,90 @@ const nextBtn = document.getElementById('day-next');
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ===================== Ленивая отрисовка дней ===================== */
-async function loadSection(section) {
+function loadSection(section) {
   const grid = section.querySelector('.meals-grid');
-  if (grid.dataset.loaded === 'true' || grid.dataset.loading === 'true') return;
+  if (grid.dataset.loaded === 'true') return Promise.resolve();
+  if (grid.dataset.loading === 'true') return grid.loadPromise ?? Promise.resolve();
   grid.dataset.loading = 'true';
-  try {
-    const day = await loadDay(section.id);
-    grid.replaceChildren(renderMeals(day, meta));
-    grid.dataset.loaded = 'true';
-    initToggleButtons(grid);
-    features.afterRender(section);
-  } catch (err) {
-    console.error(err);
-    const msg = document.createElement('div');
-    msg.className = 'load-error';
-    msg.setAttribute('role', 'alert');
-    msg.style.gridColumn = '1 / -1';
-    msg.append('Не удалось загрузить день. ');
-    const retry = document.createElement('button');
-    retry.type = 'button';
-    retry.className = 'toggle-rows';
-    retry.textContent = 'Повторить';
-    retry.addEventListener('click', () => loadSection(section));
-    msg.append(retry);
-    grid.replaceChildren(msg);
-  } finally {
-    delete grid.dataset.loading;
-  }
+  grid.loadPromise = (async () => {
+    try {
+      const day = await loadDay(section.id);
+      grid.replaceChildren(renderMeals(day, meta));
+      grid.dataset.loaded = 'true';
+      initToggleButtons(grid);
+      features.afterRender(section);
+    } catch (err) {
+      console.error(err);
+      const msg = document.createElement('div');
+      msg.className = 'load-error';
+      msg.setAttribute('role', 'alert');
+      msg.style.gridColumn = '1 / -1';
+      msg.append('Не удалось загрузить день. ');
+      const retry = document.createElement('button');
+      retry.type = 'button';
+      retry.className = 'toggle-rows';
+      retry.textContent = 'Повторить';
+      retry.addEventListener('click', () => loadSection(section));
+      msg.append(retry);
+      grid.replaceChildren(msg);
+    } finally {
+      delete grid.dataset.loading;
+      delete grid.loadPromise;
+    }
+  })();
+  return grid.loadPromise;
+}
+function clearSearchHighlights(scope = document) {
+  scope.querySelectorAll('tr.search-hit, .dish-name.search-hit').forEach(node => {
+    node.classList.remove('search-hit');
+  });
+  scope.querySelectorAll('tbody.extra-rows[data-search-opened="true"]').forEach(extra => {
+    extra.hidden = true;
+    delete extra.dataset.searchOpened;
+    const button = extra.closest('.meal-card')?.querySelector('.toggle-rows');
+    if (button) {
+      button.setAttribute('aria-expanded', 'false');
+      button.textContent = button.dataset.label || 'Показать ещё';
+    }
+  });
+}
+function highlightSearchMatches(section, terms) {
+  if (!terms.length) return;
+  clearSearchHighlights(section);
+  section.querySelectorAll('.meal-card').forEach(card => {
+    const dish = card.querySelector('.dish-name');
+    if (dish && terms.some(term => normalize(dish.textContent).split(' ').some(word => word.startsWith(term)))) {
+      dish.classList.add('search-hit');
+    }
+    card.querySelectorAll('tbody tr').forEach(row => {
+      const cell = row.querySelector('td:first-child');
+      if (!cell) return;
+      const words = normalize(cell.textContent).split(' ');
+      if (!terms.some(term => words.some(word => word.startsWith(term)))) return;
+      row.classList.add('search-hit');
+      const extra = row.closest('tbody.extra-rows');
+      if (extra && extra.hidden) {
+        extra.hidden = false;
+        extra.dataset.searchOpened = 'true';
+        const button = extra.closest('.meal-card')?.querySelector('.toggle-rows');
+        if (button) {
+          button.setAttribute('aria-expanded', 'true');
+          button.textContent = 'Скрыть';
+        }
+      }
+    });
+  });
 }
 
 /* Подгружаем соседние дни перед прокруткой, чтобы страница не «уезжала» */
-async function revealSection(section, { instant = true } = {}) {
+async function revealSection(section, { instant = true, terms = [] } = {}) {
+  if (!terms.length && section.dataset.searchTerms !== undefined) {
+    terms = section.dataset.searchTerms.split(/\s+/).filter(Boolean);
+    delete section.dataset.searchTerms;
+  }
   const i = sections.indexOf(section);
   await Promise.all(sections.slice(Math.max(0, i - 3), i + 2).map(loadSection));
+  highlightSearchMatches(section, terms);
   section.scrollIntoView({ block: 'start', behavior: instant || reduceMotion ? 'instant' : 'smooth' });
   history.replaceState(null, '', `#${section.id}`);
 }
@@ -87,23 +143,104 @@ function initToggleButtons(scope) {
 
       const expanded = btn.getAttribute('aria-expanded') === 'true';
       extra.hidden = expanded;
+      delete extra.dataset.searchOpened;
       btn.setAttribute('aria-expanded', String(!expanded));
       btn.textContent = expanded ? btn.dataset.label : 'Скрыть';
     });
   });
 }
-/* ===================== Поиск по дням и блюдам ===================== */
+/* ===================== Поиск по дням и ингредиентам ===================== */
+const MEAL_LABEL = type => meta.mealTypes[type]?.label ?? type;
+function renderSearchResults(found, terms) {
+  const fragment = document.createDocumentFragment();
+  for (const result of found.slice(0, 30)) {
+    const card = document.createElement('article');
+    card.className = 'sr-card';
+    const link = document.createElement('a');
+    link.className = 'sr-day';
+    link.href = `#${result.day.id}`;
+    link.dataset.reveal = result.day.id;
+    link.dataset.searchTerms = terms.join(' ');
+    link.textContent = `День ${result.day.label}`;
+    card.append(link);
+
+    for (const hit of result.hits.slice(0, 3)) {
+      const row = document.createElement('p');
+      row.className = 'sr-hit';
+      const details = [];
+      if (hit.dishMatched && hit.dish) details.push(`Блюдо: ${hit.dish}`);
+      const names = hit.ingredients.slice(0, 4).map(ingredient => ingredient.name);
+      if (names.length) details.push(`Ингредиенты: ${names.join(', ')}`);
+      row.textContent = `${MEAL_LABEL(hit.type)}${details.length ? ` · ${details.join('; ')}` : ''}`;
+      card.append(row);
+    }
+    fragment.append(card);
+  }
+  if (found.length > 30) {
+    const more = document.createElement('p');
+    more.className = 'sr-more';
+    more.textContent = `Показаны первые 30 из ${found.length} дней`;
+    fragment.append(more);
+  }
+  searchResults.replaceChildren(fragment);
+}
+function applySearch() {
+  const raw = searchBox.value;
+  const found = searcher(raw);
+  clearSearchHighlights();
+  searchResults.replaceChildren();
+  searchClear.hidden = !raw.trim();
+  navLinks.hidden = found !== null;
+
+  if (found === null) {
+    links.forEach(link => { link.hidden = false; link.style.display = ''; });
+    searchResults.hidden = true;
+    noResults.hidden = true;
+    searchStatus.textContent = '';
+    return;
+  }
+
+  const ids = new Set(found.map(result => result.day.id));
+  links.forEach(link => { link.hidden = !ids.has(link.getAttribute('href').slice(1)); });
+  searchResults.hidden = found.length === 0;
+  noResults.hidden = found.length > 0;
+  searchStatus.textContent = found.length ? `Найдено дней: ${found.length}` : 'Найдено дней: 0';
+  renderSearchResults(found, parseQuery(raw).include);
+}
+let searchTimer;
 searchBox.addEventListener('input', () => {
-  const q = searchBox.value.trim().toLowerCase();
-  let visibleCount = 0;
-  links.forEach(l => {
-    const hay = l.getAttribute('data-search') || '';
-    const match = !q || hay.includes(q);
-    l.style.display = match ? 'block' : 'none';
-    if (match) visibleCount++;
-  });
-  noResults.style.display = visibleCount === 0 ? 'block' : 'none';
-  searchStatus.textContent = q ? `Найдено дней: ${visibleCount}` : '';
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(applySearch, 80);
+});
+searchBox.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && searchBox.value) {
+    event.preventDefault();
+    event.stopPropagation();
+    searchBox.value = '';
+    clearTimeout(searchTimer);
+    applySearch();
+  } else if (event.key === 'Enter') {
+    clearTimeout(searchTimer);
+    applySearch();
+    const firstResult = searchResults.querySelector('.sr-day');
+    if (firstResult) {
+      event.preventDefault();
+      firstResult.click();
+    }
+  }
+});
+searchClear.addEventListener('click', () => {
+  searchBox.value = '';
+  clearTimeout(searchTimer);
+  applySearch();
+  searchBox.focus();
+});
+searchResults.addEventListener('click', event => {
+  const link = event.target.closest('.sr-day');
+  if (!link) return;
+  const section = document.getElementById(link.dataset.reveal);
+  if (section) section.dataset.searchTerms = link.dataset.searchTerms || '';
+  if (window.innerWidth <= 768 && sidebar.classList.contains('open')) closeSidebar();
 });
 
 /* ===================== Активный день / индикатор ===================== */

@@ -2,7 +2,7 @@
 // соединении (> 4 с) — копия из кэша. При установке кэшируются оболочка и ВСЕ дни.
 // Меняете этот файл или список SHELL? Увеличьте VERSION.
 // На localhost (локальная разработка) кэш отключён: файлы всегда берутся с сервера.
-const VERSION = 'v1';
+const VERSION = 'v2';
 const CACHE = `food-flow-${VERSION}`;
 const NETWORK_TIMEOUT_MS = 4000;
 const DEV = ['localhost', '127.0.0.1', '[::1]'].includes(self.location.hostname);
@@ -12,9 +12,11 @@ const SHELL = [
   'index.html',
   'manifest.json',
   'shared/css/main.css',
+  'shared/css/search.css',
   'shared/js/app.js',
   'shared/js/features.js',
   'shared/js/render.js',
+  'shared/js/search.js',
   'shared/js/shell.js',
   'shared/js/state.js',
   'shared/js/store.js',
