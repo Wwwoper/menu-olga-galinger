@@ -22,5 +22,6 @@
       "label": "Перекус"
     }
   },
-  "collapseAfter": 5
+  "collapseAfter": 5,
+  "dataVersion": 1
 }

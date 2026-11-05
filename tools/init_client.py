@@ -1,149 +1,136 @@
 #!/usr/bin/env python3
-"""Инициализация шаблона под нового клиента.
-
-uv run tools/init_client.py --name "Меню Анны Ивановой"
-uv run tools/init_client.py --name "Меню Анны Ивановой" --short-name "Анна"
-uv run tools/init_client.py --name "Меню Анны Ивановой" --create-first-day
-"""
+"""Инициализация шаблона под нового клиента."""
+from __future__ import annotations
 
 import argparse
+import html
 import json
 import re
 import subprocess
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DAYS_DIR = ROOT / "content" / "days"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from common import dump_json, write_text_atomic  # noqa: E402
 
 
-def write_json(path: Path, data: dict) -> None:
-    path.write_text(
-        json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
+def replace_once(
+    source: str, pattern: str, replacement: Callable[[re.Match[str]], str], description: str
+) -> str:
+    result, count = re.subn(pattern, replacement, source, count=1, flags=re.S)
+    if count != 1:
+        raise ValueError(f"Не удалось однозначно обновить {description}: найдено совпадений {count}")
+    return result
 
 
-def main() -> None:
-    p = argparse.ArgumentParser(description="Подготовка шаблона под нового клиента")
-    p.add_argument("--name", required=True, help='например "Меню Анны Ивановой"')
-    p.add_argument(
-        "--short-name",
-        default=None,
-        help='короткое имя под иконкой (по умолчанию не меняется, обычно "Меню")',
-    )
-    p.add_argument(
-        "--create-first-day",
-        action="store_true",
-        help="создать day-1.json с пустым шаблоном (завтрак/обед/ужин/перекус)",
-    )
-    args = p.parse_args()
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Подготовка шаблона под нового клиента")
+    parser.add_argument("--name", required=True, help='например "Меню клиента"')
+    parser.add_argument("--short-name", default=None, help="короткое имя под иконкой")
+    parser.add_argument("--create-first-day", action="store_true", help="создать day-1.json")
+    args = parser.parse_args(argv)
+
     name = args.name.strip()
     short = args.short_name.strip() if args.short_name else None
+    if not name or (args.short_name is not None and not short):
+        parser.error("--name и --short-name не должны быть пустыми")
 
-    # Убедиться, что папка дней существует
-    DAYS_DIR.mkdir(parents=True, exist_ok=True)
-
-    # content/meta.json
     meta_path = ROOT / "content" / "meta.json"
-    meta = json.loads(meta_path.read_text(encoding="utf-8"))
-    meta["title"] = name
-    write_json(meta_path, meta)
+    manifest_path = ROOT / "manifest.json"
+    index_path = ROOT / "index.html"
+    try:
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        html_text = index_path.read_text(encoding="utf-8")
+        if not isinstance(meta, dict) or not isinstance(manifest, dict):
+            raise ValueError("meta.json и manifest.json должны содержать JSON-объекты")
 
-    # manifest.json
-    man_path = ROOT / "manifest.json"
-    man = json.loads(man_path.read_text(encoding="utf-8"))
-    man["name"] = name
-    if short is not None:
-        man["short_name"] = short
-    write_json(man_path, man)
+        meta["title"] = name
+        manifest["name"] = name
+        if short is not None:
+            manifest["short_name"] = short
 
-    # index.html — title, top-header h1, sidebar h1, subtitle, apple-title
-    idx_path = ROOT / "index.html"
-    html = idx_path.read_text(encoding="utf-8")
+        safe_name = html.escape(name, quote=True)
+        sidebar_label = html.escape(short or "Меню", quote=True)
+        apple_title = html.escape(short or "Меню", quote=True)
+        html_text = replace_once(
+            html_text, r"<title>.*?</title>",
+            lambda _match: f"<title>{safe_name}</title>", "title страницы",
+        )
+        html_text = replace_once(
+            html_text, r'(<div id="top-header">\s*<h1>).*?(</h1>)',
+            lambda match: match.group(1) + safe_name + match.group(2), "заголовок шапки",
+        )
+        html_text = replace_once(
+            html_text,
+            r'(<nav id="sidebar"[^>]*>\s*<h1>).*?(</h1>)',
+            lambda match: match.group(1) + sidebar_label + match.group(2),
+            "заголовок боковой панели",
+        )
+        html_text = replace_once(
+            html_text,
+            r'(<div id="top-header">.*?<p>).*?(</p>)',
+            lambda match: (
+                match.group(1)
+                + "Полное меню · Завтрак, обед, ужин и перекус для каждого дня"
+                + match.group(2)
+            ),
+            "подзаголовок шапки",
+        )
+        html_text = replace_once(
+            html_text, r'(<meta name="apple-mobile-web-app-title" content=").*?(">)',
+            lambda match: match.group(1) + apple_title + match.group(2),
+            "apple-mobile-web-app-title",
+        )
+        html_text = replace_once(
+            html_text,
+            r'(<span id="mobile-current-day"[^>]*>).*?(</span>)',
+            lambda match: match.group(1) + sidebar_label + match.group(2),
+            "подпись мобильной навигации",
+        )
+    except (OSError, UnicodeError, json.JSONDecodeError, ValueError) as exc:
+        print(f"Ошибка подготовки конфигурации клиента: {exc}", file=sys.stderr)
+        return 1
 
-    html = re.sub(
-        r"(<title>).*?(</title>)",
-        lambda m: f"{m.group(1)}{name}{m.group(2)}",
-        html,
-        count=1,
-        flags=re.S,
-    )
-    html = re.sub(
-        r'(<div id="top-header">\s*<h1>).*?(</h1>)',
-        lambda m: f"{m.group(1)}{name}{m.group(2)}",
-        html,
-        count=1,
-        flags=re.S,
-    )
-    sidebar_label = short or "Меню"
-    html = re.sub(
-        r'(<nav id="sidebar"[^>]*>\s*<h1>).*?(<button)',
-        lambda m: f"{m.group(1)}{sidebar_label} {m.group(2)}",
-        html,
-        count=1,
-        flags=re.S,
-    )
-    html = re.sub(
-        r'(<div id="top-header">.*?<p>).*?(</p>)',
-        lambda m: (
-            f"{m.group(1)}Полное меню · Завтрак, обед, ужин и перекус для каждого дня"
-            f"{m.group(2)}"
-        ),
-        html,
-        count=1,
-        flags=re.S,
-    )
-    apple_title = short or "Меню"
-    html = re.sub(
-        r'(<meta name="apple-mobile-web-app-title" content=").*?(")',
-        lambda m: f"{m.group(1)}{apple_title}{m.group(2)}",
-        html,
-        count=1,
-    )
-    html = re.sub(
-        r'(<span id="mobile-current-day"[^>]*>).*?(</span>)',
-        lambda m: f"{m.group(1)}{sidebar_label}{m.group(2)}",
-        html,
-        count=1,
-        flags=re.S,
-    )
+    # Все преобразования и проверки выполняются до первой записи.
+    try:
+        write_text_atomic(meta_path, dump_json(meta))
+        write_text_atomic(manifest_path, dump_json(manifest))
+        write_text_atomic(index_path, html_text)
+    except OSError as exc:
+        print(f"Ошибка записи конфигурации: {exc}", file=sys.stderr)
+        return 1
 
-    idx_path.write_text(html, encoding="utf-8")
-
-    # Опционально создать первый день
     if args.create_first_day:
         day1 = DAYS_DIR / "day-1.json"
         if day1.exists():
-            print("  day-1.json уже существует — пропускаю создание")
+            print("day-1.json уже существует — пропускаю создание")
         else:
-            rc = subprocess.call(
-                [
-                    sys.executable,
-                    str(ROOT / "tools" / "new_day.py"),
-                    "day-1",
-                    "--label",
-                    "1",
-                ]
+            result = subprocess.run(
+                [sys.executable, str(ROOT / "tools" / "new_day.py"), "day-1", "--label", "1"],
+                cwd=ROOT, check=False,
             )
-            if rc != 0:
+            if result.returncode:
                 print("Ошибка при создании day-1.json", file=sys.stderr)
-                sys.exit(rc)
-            print("  Создан content/days/day-1.json (пустой шаблон)")
+                return result.returncode
+            print("Создан content/days/day-1.json (шаблон)")
 
     sw_path = ROOT / "service-worker.js"
     if sw_path.exists():
         sw = sw_path.read_text(encoding="utf-8")
-        m = re.search(r"VERSION\s*=\s*['\"]([^'\"]+)['\"]", sw)
-        if m:
-            print(
-                f"Не забудьте увеличить VERSION в service-worker.js (сейчас {m.group(1)})"
-            )
+        match = re.search(r"VERSION\s*=\s*['\"]([^'\"]+)['\"]", sw)
+        if match:
+            print(f"Не забудьте увеличить VERSION в service-worker.js (сейчас {match.group(1)})")
 
     print(f"Готово: {name}")
     if short:
         print(f"  short_name / apple-title: {short}")
     print(f"  Папка дней: {DAYS_DIR.relative_to(ROOT)}")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

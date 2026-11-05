@@ -14,7 +14,7 @@ def shell_list() -> list[str]:
 def test_sw_precaches_every_shared_file_and_icon():
     shell = set(shell_list())
     expected = {p.relative_to(ROOT).as_posix() for p in (ROOT / "shared").rglob("*") if p.is_file()}
-    expected |= {p.relative_to(ROOT).as_posix() for p in (ROOT / "icons").glob("*.png")}
+    expected |= {p.relative_to(ROOT).as_posix() for p in (ROOT / "icons").iterdir() if p.is_file()}
     expected |= {"index.html", "manifest.json", "content/meta.json", "content/days.json"}
     assert expected <= shell, f"нет в SHELL: {sorted(expected - shell)}"
 

@@ -21,6 +21,9 @@ jobs:
       - name: Set up Python
         run: uv python install 3.12
 
+      - name: Run automated tests
+        run: uv run pytest
+
       - name: Validate days
         run: uv run tools/validate.py
 

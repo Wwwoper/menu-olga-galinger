@@ -2,7 +2,7 @@
 // соединении (> 4 с) — копия из кэша. При установке кэшируются оболочка и ВСЕ дни.
 // Меняете этот файл или список SHELL? Увеличьте VERSION.
 // На localhost (локальная разработка) кэш отключён: файлы всегда берутся с сервера.
-const VERSION = 'v2';
+const VERSION = 'v3';
 const CACHE = `food-flow-${VERSION}`;
 const NETWORK_TIMEOUT_MS = 4000;
 const DEV = ['localhost', '127.0.0.1', '[::1]'].includes(self.location.hostname);
@@ -22,16 +22,21 @@ const SHELL = [
   'shared/js/store.js',
   'content/meta.json',
   'content/days.json',
-  'icons/icon-192.png',
-  'icons/icon-512.png',
-  'icons/apple-touch-icon.png',
+  'icons/mysite-192x192.png',
+  'icons/mysite-512x512.png',
+  'icons/mysite-180x180.png',
+  'icons/mysite-32x32.png',
+  'icons/mysite-16x16.png',
+  'icons/mysite.ico',
 ];
 
 self.addEventListener('install', (event) => {
   if (DEV) { self.skipWaiting(); return; }
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE);
-    await Promise.allSettled(SHELL.map((url) => cache.add(new Request(url, { cache: 'reload' }))));
+    // Оболочка обязательна: ошибка отсутствующего файла должна сорвать установку,
+    // а не оставлять частично работающий офлайн-кэш.
+    await cache.addAll(SHELL.map((url) => new Request(url, { cache: 'reload' })));
     try {
       const res = await fetch('content/days.json', { cache: 'reload' });
       const index = await res.json();
