@@ -32,22 +32,22 @@
 
 <!-- Нижняя панель для мобильных устройств: навигация по дням, поиск-триггер, тема -->
 <div id="mobile-topbar">
-  <button id="menu-toggle" aria-label="Открыть меню дней" aria-expanded="false" aria-controls="sidebar">☰</button>
-  <button id="day-prev" class="day-nav-btn" aria-label="Предыдущий день">‹</button>
+  <button id="menu-toggle" aria-label="Открыть меню дней" aria-expanded="false" aria-controls="sidebar"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  <button id="day-prev" class="day-nav-btn" aria-label="Предыдущий день"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
   <span id="mobile-current-day" aria-live="polite">Меню</span>
-  <button id="day-next" class="day-nav-btn" aria-label="Следующий день">›</button>
-  <button id="theme-toggle" class="theme-toggle-btn" aria-label="Переключить тему">🌙</button>
+  <button id="day-next" class="day-nav-btn" aria-label="Следующий день"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+  <button id="theme-toggle" class="theme-toggle-btn" aria-label="Переключить тему"><svg class="icon theme-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.9 13A9 9 0 0 1 11 3.1 9 9 0 1 0 20.9 13Z"/></svg></button>
 </div>
 
 <!-- Оверлей при открытом мобильном меню -->
 <div id="sidebar-overlay"></div>
 
 <nav id="sidebar" aria-label="Навигация по дням меню">
-  <h1>Меню <button class="theme-toggle-btn" id="theme-toggle-desktop" aria-label="Переключить тему">🌙</button></h1>
+  <h1>Меню <button class="theme-toggle-btn" id="theme-toggle-desktop" aria-label="Переключить тему"><svg class="icon theme-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.9 13A9 9 0 0 1 11 3.1 9 9 0 1 0 20.9 13Z"/></svg></button></h1>
   <label for="search-box" style="position:absolute;left:-9999px;">Поиск по дню, блюду или ингредиенту</label>
   <div class="search-control">
     <input type="search" id="search-box" placeholder="Блюдо или ингредиент..." autocomplete="off" enterkeyhint="search" aria-controls="search-results">
-    <button id="search-clear" type="button" aria-label="Очистить поиск" hidden>×</button>
+    <button id="search-clear" type="button" aria-label="Очистить поиск" hidden><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
   </div>
   <div id="search-status" role="status" aria-live="polite"></div>
   <div id="search-results" role="region" aria-label="Результаты поиска" hidden></div>
@@ -70,7 +70,7 @@
 </div>
 
 <div id="swipe-toast" aria-hidden="true"></div>
-<button id="back-to-top" title="Наверх" aria-label="Наверх страницы">↑</button>
+<button id="back-to-top" title="Наверх" aria-label="Наверх страницы"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 7-7 7 7M12 19V5"/></svg></button>
 
 <noscript><p style="padding:16px">Для работы меню нужен включённый JavaScript.</p></noscript>
 <script type="module" src="shared/js/app.js"></script>

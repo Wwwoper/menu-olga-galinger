@@ -616,3 +616,52 @@ td{padding:6px 0;border-bottom:1px solid var(--border)}
   #day-filters { padding-top: 6px; }
   .day-filter-btn { padding: 8px 6px; }
 }
+
+/* ===== Единый набор SVG-иконок и компактные icon-only controls ===== */
+.icon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  pointer-events: none;
+}
+.theme-icon { width: 19px; height: 19px; }
+#menu-toggle, .day-nav-btn, #theme-toggle, #theme-toggle-desktop,
+#search-clear, #back-to-top, .pin-btn, .favorite-btn, .hide-day-btn,
+.day-filter-btn, .banner-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+}
+#menu-toggle, .day-nav-btn, #theme-toggle {
+  width: 44px;
+  height: 44px;
+}
+#theme-toggle-desktop { width: 44px; height: 44px; }
+.day-tools { gap: 8px; }
+.pin-btn, .favorite-btn, .hide-day-btn, .banner-btn {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 10px;
+}
+.pin-btn[aria-pressed="true"] { color: #fff; }
+.favorite-btn[aria-pressed="true"] { color: var(--accent); }
+.day-filter-btn { padding: 0; border-radius: 12px; }
+#search-clear { flex-basis: 44px; width: 44px; height: 44px; padding: 0; }
+#back-to-top { padding: 0; }
+.meal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.meal-title > .icon { color: var(--primary); }
+.stats-heading { display: flex; align-items: center; gap: 8px; }
+.today-link { display: inline-flex; align-items: center; gap: 7px; }
+@media (max-width: 768px) {
+  .day-tools { gap: 8px; }
+  .portion-label { margin-left: auto; }
+  #back-to-top { right: 14px; bottom: calc(72px + env(safe-area-inset-bottom)); }
+}

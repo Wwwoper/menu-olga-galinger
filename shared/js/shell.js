@@ -1,6 +1,7 @@
 // Строит оболочку страницы (ссылки навигации и пустые секции дней) из content/days.json.
 import { loadIndex, loadMeta, registerIndex } from './store.js';
 import { PORTION_OPTIONS, formatK } from './state.js';
+import { createIcon } from './icons.js';
 
 export function plural(n, forms) {
   const a = Math.abs(n) % 100;
@@ -25,7 +26,9 @@ function buildTools() {
   pin.type = 'button';
   pin.className = 'pin-btn';
   pin.setAttribute('aria-pressed', 'false');
-  pin.textContent = '📌 Готовлю сегодня';
+  pin.setAttribute('aria-label', 'Закрепить день на сегодня');
+  pin.title = 'Закрепить день на сегодня';
+  pin.append(createIcon('pin'));
 
   const label = document.createElement('label');
   label.className = 'portion-label';
@@ -44,12 +47,16 @@ function buildTools() {
   favorite.type = 'button';
   favorite.className = 'favorite-btn';
   favorite.setAttribute('aria-pressed', 'false');
-  favorite.textContent = '☆ В избранное';
+  favorite.setAttribute('aria-label', 'Добавить день в избранное');
+  favorite.title = 'Добавить день в избранное';
+  favorite.append(createIcon('star'));
 
   const hide = document.createElement('button');
   hide.type = 'button';
   hide.className = 'hide-day-btn';
-  hide.textContent = '🙈 Скрыть';
+  hide.setAttribute('aria-label', 'Скрыть день');
+  hide.title = 'Скрыть день';
+  hide.append(createIcon('eye-off'));
 
   tools.append(pin, favorite, hide, label);
   return tools;
@@ -83,7 +90,9 @@ export async function initShell() {
     button.type = 'button';
     button.className = 'day-filter-btn';
     button.dataset.filter = value;
-    button.textContent = label;
+    button.setAttribute('aria-label', label);
+    button.title = label;
+    button.append(createIcon(value === 'all' ? 'list-days' : value === 'favorites' ? 'star' : 'eye-off'));
     button.setAttribute('aria-pressed', 'false');
     filters.append(button);
   }

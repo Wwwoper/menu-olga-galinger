@@ -1,5 +1,6 @@
 // Личные функции: «Готовлю сегодня», порции, отметки «приготовлено», локальная статистика.
 import * as S from './state.js';
+import { createIcon } from './icons.js';
 
 export const FEATURES_VERSION = '2.2';
 
@@ -27,9 +28,16 @@ export function initFeatures({ index, revealSection }) {
       if (favorite) {
         const on = favorites.has(sec.id);
         favorite.setAttribute('aria-pressed', String(on));
-        favorite.textContent = on ? '★ В избранном' : '☆ В избранное';
+        favorite.replaceChildren(createIcon('star'));
+        favorite.setAttribute('aria-label', on ? 'Убрать день из избранного' : 'Добавить день в избранное');
+        favorite.title = on ? 'Убрать день из избранного' : 'Добавить день в избранное';
       }
-      if (hide) hide.textContent = hidden.has(sec.id) ? '↩ Вернуть' : '🙈 Скрыть';
+      if (hide) {
+        const isHidden = hidden.has(sec.id);
+        hide.replaceChildren(createIcon(isHidden ? 'check' : 'eye-off'));
+        hide.setAttribute('aria-label', isHidden ? 'Вернуть день' : 'Скрыть день');
+        hide.title = isHidden ? 'Вернуть день' : 'Скрыть день';
+      }
     });
   }
 
@@ -40,7 +48,9 @@ export function initFeatures({ index, revealSection }) {
       if (!btn) return;
       const on = !!pinned && pinned.day === sec.id;
       btn.setAttribute('aria-pressed', String(on));
-      btn.textContent = on ? '📌 Закреплён на сегодня' : '📌 Готовлю сегодня';
+      btn.replaceChildren(createIcon('pin'));
+      btn.setAttribute('aria-label', on ? 'Снять закрепление дня' : 'Закрепить день на сегодня');
+      btn.title = on ? 'Снять закрепление дня' : 'Закрепить день на сегодня';
     });
   }
 
@@ -49,7 +59,8 @@ export function initFeatures({ index, revealSection }) {
     banner.replaceChildren();
 
     if (pinned) {
-      const a = h('a', 'today-link', `📌 Сегодня: ${dayName(pinned.day)}`);
+      const a = h('a', 'today-link', `Сегодня: ${dayName(pinned.day)}`);
+      a.prepend(createIcon('pin'));
       a.href = `#${pinned.day}`;
       a.dataset.reveal = pinned.day;
       banner.append(a);
@@ -69,7 +80,10 @@ export function initFeatures({ index, revealSection }) {
       banner.append(box);
     }
 
-    const stats = h('button', 'banner-btn', '📊 Статистика');
+    const stats = h('button', 'banner-btn');
+    stats.append(createIcon('chart'));
+    stats.setAttribute('aria-label', 'Статистика');
+    stats.title = 'Статистика';
     stats.type = 'button';
     stats.id = 'stats-open';
     banner.append(stats);
@@ -124,7 +138,9 @@ export function initFeatures({ index, revealSection }) {
     const events = S.getStats();
     const sum = S.summarize(events);
     const body = h('div', 'stats-body');
-    body.append(h('h2', '', '📊 Статистика выбора дней'));
+    const heading = h('h2', 'stats-heading', 'Статистика выбора дней');
+    heading.prepend(createIcon('chart'));
+    body.append(heading);
     body.append(h('p', 'stats-note',
       `Закреплений: ${sum.total} · разных дней: ${sum.distinct}. Данные хранятся только на этом устройстве.`));
 
@@ -151,18 +167,26 @@ export function initFeatures({ index, revealSection }) {
     }
 
     const actions = h('div', 'stats-actions');
-    const copy = h('button', 'banner-btn', 'Скопировать JSON');
+    const copy = h('button', 'banner-btn');
     copy.type = 'button';
+    copy.setAttribute('aria-label', 'Скопировать статистику в JSON');
+    copy.title = 'Скопировать статистику в JSON';
+    copy.append(createIcon('copy'));
     copy.addEventListener('click', async () => {
       try {
         await navigator.clipboard.writeText(JSON.stringify(events, null, 2));
-        copy.textContent = 'Скопировано';
+        copy.setAttribute('aria-label', 'Статистика скопирована');
+        copy.title = 'Статистика скопирована';
       } catch {
-        copy.textContent = 'Не удалось скопировать';
+        copy.setAttribute('aria-label', 'Не удалось скопировать статистику');
+        copy.title = 'Не удалось скопировать статистику';
       }
     });
-    const clear = h('button', 'banner-btn', 'Очистить');
+    const clear = h('button', 'banner-btn');
     clear.type = 'button';
+    clear.setAttribute('aria-label', 'Очистить статистику');
+    clear.title = 'Очистить статистику';
+    clear.append(createIcon('trash'));
     clear.addEventListener('click', () => {
       if (confirm('Очистить всю статистику выбора дней?')) {
         S.clearStats();
@@ -170,8 +194,11 @@ export function initFeatures({ index, revealSection }) {
         openStats();
       }
     });
-    const close = h('button', 'banner-btn', 'Закрыть');
+    const close = h('button', 'banner-btn');
     close.type = 'button';
+    close.setAttribute('aria-label', 'Закрыть статистику');
+    close.title = 'Закрыть статистику';
+    close.append(createIcon('x'));
     close.addEventListener('click', () => dlg.close());
     actions.append(copy, clear, close);
     body.append(actions);

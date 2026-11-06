@@ -1,3 +1,5 @@
+import { createIcon } from './icons.js';
+
 // JSON дня -> DOM карточек. Разметка повторяет прежний шаблон 1:1,
 // плюс data-grams (для порций) и чекбокс «Приготовлено».
 
@@ -19,7 +21,7 @@ function row(ing) {
 
 function renderMeal(meal, meta) {
   const type = meta.mealTypes[meal.type];
-  const h3 = el('h3', {}, meal.dish ? `${type.icon} ${type.label} ` : `${type.icon} ${type.label}`);
+  const h3 = el('h3', { class: 'meal-title' }, createIcon(type.icon), document.createTextNode(type.label + ' '));
   if (meal.dish) {
     h3.append(el('span', { class: 'dish-name' }, `— ${meal.dish}`));
   }

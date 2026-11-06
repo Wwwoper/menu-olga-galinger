@@ -6,19 +6,19 @@
   "mobileDefault": "Меню на {count} {days}",
   "mealTypes": {
     "breakfast": {
-      "icon": "🌅",
+      "icon": "sunrise",
       "label": "Завтрак"
     },
     "lunch": {
-      "icon": "🍽️",
+      "icon": "utensils",
       "label": "Обед"
     },
     "dinner": {
-      "icon": "🌙",
+      "icon": "moon-star",
       "label": "Ужин"
     },
     "snack": {
-      "icon": "🍓",
+      "icon": "apple",
       "label": "Перекус"
     }
   },

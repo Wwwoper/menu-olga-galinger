@@ -4,6 +4,7 @@ import { renderMeals } from './render.js';
 import { initFeatures } from './features.js';
 import { getPinned, getDayPreferences, getDayFilter, setDayFilter } from './state.js';
 import { buildSearcher, normalize, parseQuery } from './search.js';
+import { createIcon } from './icons.js';
 
 const { meta, index } = await initShell();
 const links = Array.from(document.querySelectorAll('.nav-link'));
@@ -340,7 +341,12 @@ const root = document.documentElement;
 function applyTheme(theme) {
   root.setAttribute('data-theme', theme);
   localStorage.setItem('menu-theme', theme);
-  themeToggleBtns.forEach(b => b.textContent = theme === 'dark' ? '☀️' : '🌙');
+  themeToggleBtns.forEach((button) => {
+    button.replaceChildren(createIcon(theme === 'dark' ? 'sun' : 'moon', { className: 'icon theme-icon' }));
+    const label = theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему';
+    button.setAttribute('aria-label', label);
+    button.title = label;
+  });
 }
 const savedTheme = localStorage.getItem('menu-theme')
   || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
