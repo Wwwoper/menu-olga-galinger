@@ -570,3 +570,49 @@ td{padding:6px 0;border-bottom:1px solid var(--border)}
     margin-left: 0
   }
 }
+
+/* ===== Разделы меню и личные отметки дней ===== */
+#day-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 12px 4px;
+}
+.day-filter-btn {
+  flex: 1 1 auto;
+  border: 1px solid rgba(255,255,255,.25);
+  border-radius: 16px;
+  padding: 6px 9px;
+  background: rgba(255,255,255,.08);
+  color: #e8f1eb;
+  font-size: 12px;
+  cursor: pointer;
+}
+.day-filter-btn[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+.favorite-btn,
+.hide-day-btn {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  background: transparent;
+  color: var(--primary-dark);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+:root[data-theme="dark"] .favorite-btn,
+:root[data-theme="dark"] .hide-day-btn { color: var(--accent); }
+.favorite-btn[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+.favorite-btn:hover,
+.hide-day-btn:hover { background: var(--border); }
+@media (max-width:768px) {
+  #day-filters { padding-top: 6px; }
+  .day-filter-btn { padding: 8px 6px; }
+}

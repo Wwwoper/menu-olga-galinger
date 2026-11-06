@@ -92,3 +92,50 @@ test('plural и fill для «день/дня/дней»', { skip: !plural }, ()
   assert.equal(plural(21, f), 'день');
   assert.equal(fill('Меню на {count} {days}', 44), 'Меню на 44 дня');
 });
+
+test('избранное и скрытые дни взаимоисключающие', () => {
+  assert.equal(S.setFavorite('day-2', true), true);
+  assert.deepEqual(S.getDayPreferences(), { favorites: ['day-2'], hidden: [] });
+
+  assert.equal(S.setHidden('day-2', true), true);
+  assert.deepEqual(S.getDayPreferences(), { favorites: [], hidden: ['day-2'] });
+
+  assert.equal(S.setHidden('day-2', false), true);
+  assert.deepEqual(S.getDayPreferences(), { favorites: [], hidden: [] });
+});
+
+test('предпочтения очищают дубли, повреждённые значения и устаревшие ID', () => {
+  store.set('menu-day-preferences', JSON.stringify({
+    favorites: ['day-1', 'day-1', null, 7],
+    hidden: ['day-3', 'day-2'],
+  }));
+  assert.deepEqual(S.getDayPreferences(['day-1', 'day-2']), {
+    favorites: ['day-1'], hidden: ['day-2'],
+  });
+  store.set('menu-day-preferences', 'не json');
+  assert.deepEqual(S.getDayPreferences(), { favorites: [], hidden: [] });
+});
+
+test('последний раздел сохраняется и некорректное значение сбрасывается на «Все»', () => {
+  assert.equal(S.getDayFilter(), 'all');
+  assert.equal(S.setDayFilter('favorites'), true);
+  assert.equal(S.getDayFilter(), 'favorites');
+  assert.equal(S.setDayFilter('unknown'), false);
+  store.set('menu-day-filter', 'unknown');
+  assert.equal(S.getDayFilter(), 'all');
+});
+
+test('ошибка localStorage не сообщает об успешном сохранении', () => {
+  const original = globalThis.localStorage;
+  globalThis.localStorage = {
+    getItem: original.getItem,
+    setItem() { throw new Error('storage unavailable'); },
+    removeItem: original.removeItem,
+  };
+  try {
+    assert.equal(S.setFavorite('day-1', true), false);
+    assert.equal(S.setDayFilter('hidden'), false);
+  } finally {
+    globalThis.localStorage = original;
+  }
+});

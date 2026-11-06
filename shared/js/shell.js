@@ -40,7 +40,18 @@ function buildTools() {
   }
   label.append(select);
 
-  tools.append(pin, label);
+  const favorite = document.createElement('button');
+  favorite.type = 'button';
+  favorite.className = 'favorite-btn';
+  favorite.setAttribute('aria-pressed', 'false');
+  favorite.textContent = '☆ В избранное';
+
+  const hide = document.createElement('button');
+  hide.type = 'button';
+  hide.className = 'hide-day-btn';
+  hide.textContent = '🙈 Скрыть';
+
+  tools.append(pin, favorite, hide, label);
   return tools;
 }
 
@@ -63,6 +74,20 @@ export async function initShell() {
 
   const navRoot = document.getElementById('nav-links');
   const end = document.getElementById('days-end');
+  const filters = document.createElement('div');
+  filters.id = 'day-filters';
+  filters.setAttribute('role', 'group');
+  filters.setAttribute('aria-label', 'Разделы дней');
+  for (const [value, label] of [['all', 'Все'], ['favorites', 'Избранное'], ['hidden', 'Скрытые']]) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'day-filter-btn';
+    button.dataset.filter = value;
+    button.textContent = label;
+    button.setAttribute('aria-pressed', 'false');
+    filters.append(button);
+  }
+  navRoot.before(filters);
   const navFrag = document.createDocumentFragment();
   const secFrag = document.createDocumentFragment();
 

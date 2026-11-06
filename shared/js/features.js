@@ -17,6 +17,22 @@ export function initFeatures({ index, revealSection }) {
   const banner = document.getElementById('today-banner');
 
   /* ---------- Закрепление дня и баннер ---------- */
+  function refreshPreferences() {
+    const preferences = S.getDayPreferences(index.days.map((day) => day.id));
+    const favorites = new Set(preferences.favorites);
+    const hidden = new Set(preferences.hidden);
+    document.querySelectorAll('.day-section').forEach((sec) => {
+      const favorite = sec.querySelector('.favorite-btn');
+      const hide = sec.querySelector('.hide-day-btn');
+      if (favorite) {
+        const on = favorites.has(sec.id);
+        favorite.setAttribute('aria-pressed', String(on));
+        favorite.textContent = on ? '★ В избранном' : '☆ В избранное';
+      }
+      if (hide) hide.textContent = hidden.has(sec.id) ? '↩ Вернуть' : '🙈 Скрыть';
+    });
+  }
+
   function refreshPins() {
     const pinned = S.getPinned();
     document.querySelectorAll('.day-section').forEach((sec) => {
@@ -167,6 +183,27 @@ export function initFeatures({ index, revealSection }) {
 
   /* ---------- События ---------- */
   document.addEventListener('click', (e) => {
+    const favorite = e.target.closest('.favorite-btn');
+    if (favorite) {
+      const id = favorite.closest('.day-section').id;
+      const on = favorite.getAttribute('aria-pressed') !== 'true';
+      if (S.setFavorite(id, on)) {
+        refreshPreferences();
+        window.dispatchEvent(new CustomEvent('menu:preferenceschange'));
+      }
+      return;
+    }
+    const hide = e.target.closest('.hide-day-btn');
+    if (hide) {
+      const id = hide.closest('.day-section').id;
+      const on = !S.getDayPreferences().hidden.includes(id);
+      if (S.setHidden(id, on)) {
+        if (!on) S.setDayFilter('all');
+        refreshPreferences();
+        window.dispatchEvent(new CustomEvent('menu:preferenceschange'));
+      }
+      return;
+    }
     const pin = e.target.closest('.pin-btn');
     if (pin) {
       const id = pin.closest('.day-section').id;
@@ -202,6 +239,7 @@ export function initFeatures({ index, revealSection }) {
   // Другая вкладка, возврат в приложение или наступивший новый день: обновляем состояние
   const refreshAll = () => {
     refreshPins();
+    refreshPreferences();
     renderBanner();
     applyPortions();
     restoreAllDone();
@@ -214,13 +252,19 @@ export function initFeatures({ index, revealSection }) {
       refreshAll();
     }
   };
-  window.addEventListener('storage', refreshAll);
+  window.addEventListener('storage', (event) => {
+    refreshAll();
+    if (!event.key || event.key === 'menu-day-preferences' || event.key === 'menu-day-filter') {
+      window.dispatchEvent(new CustomEvent('menu:preferenceschange'));
+    }
+  });
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) { knownDate = S.todayStr(); refreshAll(); }
   });
   setInterval(checkDateChange, 60000);
 
   refreshPins();
+  refreshPreferences();
   renderBanner();
   applyPortions();
 

@@ -88,3 +88,14 @@ test('результат содержит конкретный приём пищ
 test('пустой запрос возвращает null — интерфейс может показать исходную навигацию', () => {
   assert.equal(search('   '), null);
 });
+
+
+test('поиск может быть ограничен выбранным набором дней', () => {
+  const index = { days: [
+    { id: 'day-1', index: 0, search: 'овсянка', meals: [] },
+    { id: 'day-2', index: 1, search: 'творог', meals: [] },
+  ] };
+  const search = buildSearcher({ ...index, days: [index.days[1]] });
+  assert.deepEqual(search('овсянка'), []);
+  assert.deepEqual(search('творог').map(result => result.day.id), ['day-2']);
+});

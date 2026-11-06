@@ -2,10 +2,10 @@ import { initShell } from './shell.js';
 import { loadDay } from './store.js';
 import { renderMeals } from './render.js';
 import { initFeatures } from './features.js';
-import { getPinned } from './state.js';
+import { getPinned, getDayPreferences, getDayFilter, setDayFilter } from './state.js';
 import { buildSearcher, normalize, parseQuery } from './search.js';
 
-const { meta, index, DAY_IDS } = await initShell();
+const { meta, index } = await initShell();
 const links = Array.from(document.querySelectorAll('.nav-link'));
 const sections = Array.from(document.querySelectorAll('.day-section'));
 const searchBox = document.getElementById('search-box');
@@ -13,8 +13,64 @@ const noResults = document.getElementById('no-results');
 const searchStatus = document.getElementById('search-status');
 const navLinks = document.getElementById('nav-links');
 const searchResults = document.getElementById('search-results');
+const filterButtons = Array.from(document.querySelectorAll('.day-filter-btn'));
+let currentFilter = getDayFilter();
+let visibleDayIds = [];
+
+function filteredDays() {
+  const preferences = getDayPreferences(index.days.map(day => day.id));
+  const favorites = new Set(preferences.favorites);
+  const hidden = new Set(preferences.hidden);
+  if (currentFilter === 'favorites') return index.days.filter(day => favorites.has(day.id));
+  if (currentFilter === 'hidden') return index.days.filter(day => hidden.has(day.id));
+  return index.days.filter(day => !hidden.has(day.id));
+}
+
+function applyFilter({ scrollToFirst = false } = {}) {
+  currentFilter = getDayFilter();
+  const days = filteredDays();
+  visibleDayIds = days.map(day => day.id);
+  const allowed = new Set(visibleDayIds);
+  links.forEach(link => {
+    const id = link.getAttribute('href').slice(1);
+    link.hidden = !allowed.has(id);
+  });
+  sections.forEach(section => { section.hidden = !allowed.has(section.id); });
+  filterButtons.forEach(button => {
+    const active = button.dataset.filter === currentFilter;
+    button.setAttribute('aria-pressed', String(active));
+  });
+  searcher = buildSearcher({ ...index, days });
+  if (searchBox.value.trim()) applySearch();
+  else {
+    navLinks.hidden = false;
+    searchResults.hidden = true;
+    noResults.hidden = visibleDayIds.length > 0;
+    noResults.textContent = visibleDayIds.length ? 'Ничего не найдено' : 'В этом разделе пока нет дней';
+    searchStatus.textContent = '';
+  }
+  if (!visibleDayIds.length) {
+    if (prevBtn) prevBtn.disabled = true;
+    if (nextBtn) nextBtn.disabled = true;
+    links.forEach(link => link.classList.remove('active'));
+  }
+  if (scrollToFirst && visibleDayIds.length) {
+    const active = document.querySelector('.nav-link.active')?.getAttribute('href')?.slice(1);
+    if (!allowed.has(active)) revealSection(document.getElementById(visibleDayIds[0]));
+  }
+}
+
+function chooseFilterForDay(dayId) {
+  const preferences = getDayPreferences(index.days.map(day => day.id));
+  const filter = preferences.hidden.includes(dayId) ? 'hidden'
+    : preferences.favorites.includes(dayId) ? 'favorites' : 'all';
+  if (filter !== currentFilter) {
+    setDayFilter(filter);
+    applyFilter();
+  }
+}
 const searchClear = document.getElementById('search-clear');
-const searcher = buildSearcher(index);
+let searcher = buildSearcher(index);
 const sidebar = document.getElementById('sidebar');
 const overlay = document.getElementById('sidebar-overlay');
 const menuToggle = document.getElementById('menu-toggle');
@@ -104,18 +160,26 @@ function highlightSearchMatches(section, terms) {
 
 /* Подгружаем соседние дни перед прокруткой, чтобы страница не «уезжала» */
 async function revealSection(section, { instant = true, terms = [] } = {}) {
+  if (section && !visibleDayIds.includes(section.id)) chooseFilterForDay(section.id);
+  if (!section || section.hidden) return;
   if (!terms.length && section.dataset.searchTerms !== undefined) {
     terms = section.dataset.searchTerms.split(/\s+/).filter(Boolean);
     delete section.dataset.searchTerms;
   }
-  const i = sections.indexOf(section);
-  await Promise.all(sections.slice(Math.max(0, i - 3), i + 2).map(loadSection));
+  const visibleSections = visibleDayIds.map(id => document.getElementById(id)).filter(Boolean);
+  const i = visibleSections.indexOf(section);
+  await Promise.all(visibleSections.slice(Math.max(0, i - 3), i + 2).map(loadSection));
   highlightSearchMatches(section, terms);
   section.scrollIntoView({ block: 'start', behavior: instant || reduceMotion ? 'instant' : 'smooth' });
   history.replaceState(null, '', `#${section.id}`);
 }
 
 const features = initFeatures({ index, revealSection });
+filterButtons.forEach(button => button.addEventListener('click', () => {
+  if (setDayFilter(button.dataset.filter)) applyFilter({ scrollToFirst: true });
+}));
+window.addEventListener('menu:preferenceschange', () => applyFilter({ scrollToFirst: true }));
+applyFilter();
 
 const lazyObserver = new IntersectionObserver(entries => {
   entries.forEach(entry => {
@@ -193,17 +257,21 @@ function applySearch() {
   navLinks.hidden = found !== null;
 
   if (found === null) {
-    links.forEach(link => { link.hidden = false; link.style.display = ''; });
+    const allowed = new Set(visibleDayIds);
+    links.forEach(link => { link.hidden = !allowed.has(link.getAttribute('href').slice(1)); link.style.display = ''; });
     searchResults.hidden = true;
-    noResults.hidden = true;
+    noResults.hidden = visibleDayIds.length > 0;
+    noResults.textContent = visibleDayIds.length ? 'Ничего не найдено' : 'В этом разделе пока нет дней';
     searchStatus.textContent = '';
     return;
   }
 
   const ids = new Set(found.map(result => result.day.id));
-  links.forEach(link => { link.hidden = !ids.has(link.getAttribute('href').slice(1)); });
+  const allowed = new Set(visibleDayIds);
+  links.forEach(link => { const id = link.getAttribute('href').slice(1); link.hidden = !allowed.has(id) || !ids.has(id); });
   searchResults.hidden = found.length === 0;
   noResults.hidden = found.length > 0;
+  noResults.textContent = 'Ничего не найдено';
   searchStatus.textContent = found.length ? `Найдено дней: ${found.length}` : 'Найдено дней: 0';
   renderSearchResults(found, parseQuery(raw).include);
 }
@@ -251,9 +319,9 @@ function setActiveById(id) {
     link.classList.add('active');
     mobileCurrentDay.textContent = link.getAttribute('data-day');
   }
-  const idx = DAY_IDS.indexOf(id);
+  const idx = visibleDayIds.indexOf(id);
   if (prevBtn) prevBtn.disabled = idx <= 0;
-  if (nextBtn) nextBtn.disabled = idx === -1 || idx >= DAY_IDS.length - 1;
+  if (nextBtn) nextBtn.disabled = idx === -1 || idx >= visibleDayIds.length - 1;
 }
 const activeObserver = new IntersectionObserver(entries => {
   entries.forEach(entry => {
@@ -324,8 +392,8 @@ links.forEach(l => l.addEventListener('click', () => {
 
 /* ===================== Переход между днями (кнопки) ===================== */
 function goToDay(idx) {
-  if (idx < 0 || idx >= DAY_IDS.length) return;
-  const el = document.getElementById(DAY_IDS[idx]);
+  if (idx < 0 || idx >= visibleDayIds.length) return;
+  const el = document.getElementById(visibleDayIds[idx]);
   if (!el) return;
   loadSection(el);
   el.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
@@ -335,7 +403,7 @@ function currentIndex() {
   const activeLink = document.querySelector('.nav-link.active');
   if (!activeLink) return 0;
   const id = activeLink.getAttribute('href').slice(1);
-  return DAY_IDS.indexOf(id);
+  return visibleDayIds.indexOf(id);
 }
 if (prevBtn) prevBtn.addEventListener('click', () => goToDay(currentIndex() - 1));
 if (nextBtn) nextBtn.addEventListener('click', () => goToDay(currentIndex() + 1));
@@ -372,17 +440,21 @@ content.addEventListener('touchend', e => {
 }, { passive: true });
 
 /* Инициализация: подгружаем первый видимый день сразу */
-if (sections[0]) loadSection(sections[0]);
-setActiveById(DAY_IDS[0]);
+if (visibleDayIds[0]) loadSection(document.getElementById(visibleDayIds[0]));
+if (visibleDayIds[0]) setActiveById(visibleDayIds[0]);
 
 /* Старт: ссылка #day-N имеет приоритет, иначе открываем день, закреплённый на сегодня */
 const hashId = decodeURIComponent(location.hash.slice(1));
 const hashSection = hashId ? document.getElementById(hashId) : null;
 const pinned = getPinned();
+const initialVisibleDayId = visibleDayIds[0];
 const startSection = hashSection && hashSection.classList.contains('day-section')
   ? hashSection
   : (pinned && document.getElementById(pinned.day));
-if (startSection && startSection !== sections[0]) revealSection(startSection);
+if (startSection) {
+  chooseFilterForDay(startSection.id);
+  if (startSection.id !== initialVisibleDayId) revealSection(startSection);
+}
 
 /* PWA: офлайн-режим */
 if ('serviceWorker' in navigator) {

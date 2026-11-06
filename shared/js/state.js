@@ -5,6 +5,8 @@ const KEYS = {
   pinned: 'menu-pinned',
   done: 'menu-done',
   stats: 'menu-stats',
+  dayPreferences: 'menu-day-preferences',
+  dayFilter: 'menu-day-filter',
 };
 const STATS_LIMIT = 1000;
 
@@ -37,6 +39,59 @@ function remove(key) {
 export function todayStr(now = new Date()) {
   const p = (n) => String(n).padStart(2, '0');
   return `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}`;
+}
+
+
+/* ---------- Избранное, скрытые дни и выбранный раздел ---------- */
+const DAY_FILTERS = ['all', 'favorites', 'hidden'];
+
+export function getDayPreferences(dayIds) {
+  const value = read(KEYS.dayPreferences, {});
+  const valid = (items) => {
+    if (!Array.isArray(items)) return [];
+    const ids = [...new Set(items.filter((id) => typeof id === 'string' && id.trim()))];
+    return dayIds ? ids.filter((id) => dayIds.includes(id)) : ids;
+  };
+  const hidden = valid(value?.hidden);
+  const hiddenSet = new Set(hidden);
+  return {
+    favorites: valid(value?.favorites).filter((id) => !hiddenSet.has(id)),
+    hidden,
+  };
+}
+
+function saveDayPreferences(preferences) {
+  return write(KEYS.dayPreferences, preferences);
+}
+
+export function setFavorite(dayId, value) {
+  if (typeof dayId !== 'string' || !dayId.trim()) return false;
+  const preferences = getDayPreferences();
+  const favorites = new Set(preferences.favorites);
+  const hidden = new Set(preferences.hidden);
+  if (value) { favorites.add(dayId); hidden.delete(dayId); }
+  else favorites.delete(dayId);
+  return saveDayPreferences({ favorites: [...favorites], hidden: [...hidden] });
+}
+
+export function setHidden(dayId, value) {
+  if (typeof dayId !== 'string' || !dayId.trim()) return false;
+  const preferences = getDayPreferences();
+  const favorites = new Set(preferences.favorites);
+  const hidden = new Set(preferences.hidden);
+  if (value) { hidden.add(dayId); favorites.delete(dayId); }
+  else hidden.delete(dayId);
+  return saveDayPreferences({ favorites: [...favorites], hidden: [...hidden] });
+}
+
+export function getDayFilter() {
+  const value = read(KEYS.dayFilter, 'all');
+  return DAY_FILTERS.includes(value) ? value : 'all';
+}
+
+export function setDayFilter(value) {
+  if (!DAY_FILTERS.includes(value)) return false;
+  return write(KEYS.dayFilter, value);
 }
 
 /* ---------- Порции ---------- */
