@@ -298,7 +298,7 @@ def make_day_identity(
             variant_number = variant_match.group(1) or variant_match.group(2) or "2"
         return (
             f"{base_id}-var-{variant_number}",
-            f"{day_number} {variant_number})",
+            f"{day_number} ({variant_number})",
             base_id,
         )
 
