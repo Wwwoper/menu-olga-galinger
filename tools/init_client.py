@@ -13,6 +13,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DAYS_DIR = ROOT / "content" / "days"
+TEMPLATE_VERSION_PATH = ROOT / "TEMPLATE_VERSION"
+CLIENT_TEMPLATE_VERSION_PATH = ROOT / "CLIENT_TEMPLATE_VERSION"
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import dump_json, write_text_atomic  # noqa: E402
 
@@ -45,6 +47,9 @@ def main(argv: list[str] | None = None) -> int:
         meta = json.loads(meta_path.read_text(encoding="utf-8"))
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         html_text = index_path.read_text(encoding="utf-8")
+        template_version = TEMPLATE_VERSION_PATH.read_text(encoding="utf-8").strip()
+        if not template_version or "\n" in template_version or "\r" in template_version:
+            raise ValueError("TEMPLATE_VERSION должен содержать одну непустую строку")
         if not isinstance(meta, dict) or not isinstance(manifest, dict):
             raise ValueError("meta.json и manifest.json должны содержать JSON-объекты")
 
@@ -100,6 +105,10 @@ def main(argv: list[str] | None = None) -> int:
         write_text_atomic(meta_path, dump_json(meta))
         write_text_atomic(manifest_path, dump_json(manifest))
         write_text_atomic(index_path, html_text)
+        if not CLIENT_TEMPLATE_VERSION_PATH.exists():
+            write_text_atomic(CLIENT_TEMPLATE_VERSION_PATH, f"{template_version}\n")
+        else:
+            print("CLIENT_TEMPLATE_VERSION уже существует — сохраняю исходную версию")
     except OSError as exc:
         print(f"Ошибка записи конфигурации: {exc}", file=sys.stderr)
         return 1
@@ -129,6 +138,7 @@ def main(argv: list[str] | None = None) -> int:
     if short:
         print(f"  short_name / apple-title: {short}")
     print(f"  Папка дней: {DAYS_DIR.relative_to(ROOT)}")
+    print(f"  Исходная версия шаблона: {template_version}")
     return 0
 
 
