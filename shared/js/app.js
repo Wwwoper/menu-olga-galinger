@@ -332,7 +332,7 @@ const activeObserver = new IntersectionObserver(entries => {
 sections.forEach(s => activeObserver.observe(s));
 
 window.addEventListener('scroll', () => {
-  backBtn.style.display = window.scrollY > 400 ? 'block' : 'none';
+  backBtn.hidden = window.scrollY <= 400;
 });
 backBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' }));
 

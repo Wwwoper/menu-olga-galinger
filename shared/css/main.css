@@ -630,6 +630,11 @@ td{padding:6px 0;border-bottom:1px solid var(--border)}
   width: 20px;
   height: 20px;
   flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
   pointer-events: none;
 }
 .theme-icon { width: 19px; height: 19px; }
@@ -658,7 +663,12 @@ td{padding:6px 0;border-bottom:1px solid var(--border)}
 .favorite-btn[aria-pressed="true"] { color: var(--accent); }
 .day-filter-btn { padding: 0; border-radius: 12px; }
 #search-clear { flex-basis: 44px; width: 44px; height: 44px; padding: 0; }
-#back-to-top { padding: 0; }
+#back-to-top {
+  padding: 0;
+  line-height: 0;
+  place-content: center;
+}
+#back-to-top[hidden] { display: none; }
 .meal-title {
   display: flex;
   align-items: center;
@@ -959,12 +969,18 @@ tbody tr:last-child td {
 }
 
 .meal-card.done {
-  opacity: 1;
-  background: color-mix(in srgb, var(--primary) 4%, var(--card-bg));
+  position: relative;
+  isolation: isolate;
 }
 
-.meal-card.done h3.meal-title {
-  color: var(--muted);
+.meal-card.done::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--muted) 22%, transparent);
+  pointer-events: none;
 }
 
 .meal-card.done h3::after {
@@ -972,7 +988,8 @@ tbody tr:last-child td {
 }
 
 .meal-card.done .done-toggle {
-  color: var(--primary);
+  position: relative;
+  z-index: 2;
 }
 
 @media (max-width: 768px) {
