@@ -2,7 +2,7 @@
 // соединении (> 4 с) — копия из кэша. При установке кэшируются оболочка и ВСЕ дни.
 // Меняете этот файл или список SHELL? Увеличьте VERSION.
 // На localhost (локальная разработка) кэш отключён: файлы всегда берутся с сервера.
-const VERSION = 'v3';
+const VERSION = 'v4';
 const CACHE = `food-flow-${VERSION}`;
 const NETWORK_TIMEOUT_MS = 4000;
 const DEV = ['localhost', '127.0.0.1', '[::1]'].includes(self.location.hostname);
@@ -21,7 +21,6 @@ const SHELL = [
   'shared/js/state.js',
   'shared/js/store.js',
   'content/meta.json',
-  'content/days.json',
   'icons/mysite-192x192.png',
   'icons/mysite-512x512.png',
   'icons/mysite-180x180.png',
@@ -37,13 +36,22 @@ self.addEventListener('install', (event) => {
     // Оболочка обязательна: ошибка отсутствующего файла должна сорвать установку,
     // а не оставлять частично работающий офлайн-кэш.
     await cache.addAll(SHELL.map((url) => new Request(url, { cache: 'reload' })));
-    try {
-      const res = await fetch('content/days.json', { cache: 'reload' });
-      const index = await res.json();
-      await Promise.allSettled(index.days.map((d) => cache.add(new Request(`content/${d.file}`, { cache: 'reload' }))));
-    } catch (err) {
-      // нет сети при установке: остальное закэшируется при обычном использовании
+
+    const response = await fetch('content/days.json', { cache: 'reload' });
+    if (!response.ok) throw new Error(`Не удалось загрузить content/days.json: HTTP ${response.status}`);
+    const index = await response.clone().json();
+    if (!index || !Array.isArray(index.days)) {
+      throw new Error('Некорректный content/days.json: ожидается массив days');
     }
+    await cache.put('content/days.json', response);
+
+    const dayRequests = index.days.map((day) => {
+      if (!day || typeof day.file !== 'string' || day.file.startsWith('/') || day.file.includes('..')) {
+        throw new Error('Некорректный путь файла дня в content/days.json');
+      }
+      return new Request(`content/${day.file}`, { cache: 'reload' });
+    });
+    if (dayRequests.length) await cache.addAll(dayRequests);
     await self.skipWaiting();
   })());
 });

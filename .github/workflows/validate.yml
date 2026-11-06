@@ -1,4 +1,4 @@
-name: Validate menu data
+name: Validate and deploy Menu
 
 on:
   push:
@@ -6,8 +6,15 @@ on:
   pull_request:
     branches: [main, master]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  validate:
+  build:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
@@ -15,17 +22,55 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v10.3.0
         with:
-          version: "latest"
+          version: latest
           enable-cache: false
 
       - name: Set up Python
         run: uv python install 3.12
 
-      - name: Run automated tests
-        run: uv run pytest
+      - name: Install project dependencies
+        run: uv sync --group dev --python 3.12
 
-      - name: Validate days
+      - name: Validate client data
         run: uv run tools/validate.py
 
-      - name: Check days.json is up to date
-        run: uv run tools/build_index.py --check
+      - name: Generate days index
+        run: uv run tools/build_index.py
+
+      - name: Run Python tests
+        run: uv run pytest
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run JavaScript tests
+        run: node --test tests/js/*.test.mjs
+
+      - name: Prepare Pages artifact
+        if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+        run: |
+          mkdir -p _site
+          cp -R index.html manifest.json service-worker.js shared icons content _site/
+
+      - name: Upload Pages artifact
+        if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+  deploy:
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

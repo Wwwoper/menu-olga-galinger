@@ -6,16 +6,16 @@
 uv run tools/new_day.py day-45 --label 45 --copy-from day-44
 # отредактируйте content/days/day-45.json
 uv run tools/validate.py
-git add -A && git commit -m "content: add day 45" && git push
+git add content/days && git commit -m "content: add day 45" && git push
 ```
 
-`new_day.py` сам пересобирает `content/days.json` (навигация, порядок и строка поиска).
-Service worker сам подхватит новый день: список дней он берёт из `days.json`.
+`new_day.py` локально пересобирает `content/days.json` (навигация, порядок и строка поиска). Этот файл генерируется и исключён из Git. При публикации GitHub Actions создаёт его заново из JSON-файлов дней.
+Service worker получает список дней из сгенерированного `days.json` и кэширует все перечисленные файлы.
 
 ## Правка существующего дня
 
 1. Откройте `content/days/day-N.json` и измените названия или граммовки.
-2. Запустите `uv run tools/build_index.py` — обновится строка поиска.
+2. Запустите `uv run tools/build_index.py` — локально обновится строка поиска. Индекс не нужно коммитить: CI пересоберёт его перед публикацией.
 3. Коммит и push.
 
 Офлайн-копия на телефоне обновится при следующем открытии с интернетом

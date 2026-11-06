@@ -59,6 +59,6 @@ desktop.ini
 .cache/
 *.patch
 
-# Важно: НЕ добавляйте в .gitignore эти файлы - GitHub Pages должен их раздавать:
-#   content/days.json   (генерируется tools/build_index.py, но хранится в репозитории)
-#   icons/, manifest.json, service-worker.js
+# Генерируемые артефакты: создаются локально или в CI перед публикацией.
+content/days.json
+_site/

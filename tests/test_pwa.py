@@ -15,14 +15,21 @@ def test_sw_precaches_every_shared_file_and_icon():
     shell = set(shell_list())
     expected = {p.relative_to(ROOT).as_posix() for p in (ROOT / "shared").rglob("*") if p.is_file()}
     expected |= {p.relative_to(ROOT).as_posix() for p in (ROOT / "icons").iterdir() if p.is_file()}
-    expected |= {"index.html", "manifest.json", "content/meta.json", "content/days.json"}
+    expected |= {"index.html", "manifest.json", "content/meta.json"}
     assert expected <= shell, f"нет в SHELL: {sorted(expected - shell)}"
 
 
 def test_sw_shell_files_exist():
     for item in shell_list():
         if item != "./":
-            assert (ROOT / item).exists(), item
+            assert (ROOT / item).is_file(), item
+
+
+def test_sw_loads_and_caches_generated_index_and_client_days():
+    text = (ROOT / "service-worker.js").read_text(encoding="utf-8")
+    assert "fetch('content/days.json'" in text
+    assert "cache.put('content/days.json', response)" in text
+    assert "cache.addAll(dayRequests)" in text
 
 
 def test_manifest_is_relative_and_icons_exist():

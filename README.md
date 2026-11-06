@@ -1,18 +1,24 @@
 # Template Menu — персональное меню питания (PWA)
 
 Шаблон для быстрого создания отдельного репозитория под каждого клиента.
-Один форк / «Use this template» → готовое офлайн-приложение с меню на N дней
-(завтрак, обед, ужин, перекус), поиском, тёмной темой и установкой на домашний экран.
+Каждый клиент получает независимый GitHub Pages, а общая Git-история позволяет
+переносить обновления приложения из шаблона через upstream. Приложение работает
+офлайн, поддерживает меню на N дней, поиск, тёмную тему и установку на домашний экран.
 
 ## Быстрый старт для нового клиента
 
-1. На GitHub: **Use this template** → Create a new repository (или сделайте fork).
-2. Клонируйте репозиторий:
+1. На GitHub создайте **пустой** репозиторий клиента, например `menu-client-a` (без README и `.gitignore`).
+2. Клонируйте шаблон и подключите репозиторий клиента как `origin`:
 
    ```bash
-   git clone <url-вашего-репо>
-   cd <имя-репо>
+   git clone https://github.com/Wwwoper/template-menu.git menu-client-a
+   cd menu-client-a
+   git remote rename origin upstream
+   git remote add origin https://github.com/Wwwoper/menu-client-a.git
+   git push -u origin main
    ```
+
+   Замените URL и имя репозитория на свои. `upstream` будет источником обновлений шаблона, `origin` — репозиторием клиента.
 
 3. Установите зависимости инструментов (нужен [uv](https://github.com/astral-sh/uv) и Python ≥ 3.11):
 
@@ -70,12 +76,14 @@ uv run tools/new_day.py day-1 --label 1
 
 В этом случае файл будет содержать четыре заготовки (завтрак, обед, ужин, перекус) с одним ингредиентом-заглушкой. Их нужно заменить на реальные данные.
 
-После редактирования файла дня обязательно проверьте и пересоберите индекс. Валидатор проверяет структуру каждого дня, граммовки и связи вариантов с основными днями:
+После редактирования файлов дней проверьте данные и локально пересоберите индекс для просмотра приложения. Валидатор проверяет структуру каждого дня, граммовки и связи вариантов с основными днями:
 
 ```bash
 uv run tools/validate.py
 uv run tools/build_index.py
 ```
+
+`content/days.json` — генерируемый файл: он добавлен в `.gitignore` и не коммитится. При публикации GitHub Actions заново создаёт индекс из `content/days/*.json` и включает его в артефакт сайта. В Git хранятся только исходные JSON-файлы дней.
 
 Заголовки «Меню на N дней» и склонение («1 день», «2 дня», «5 дней») обновятся автоматически.
 
@@ -98,26 +106,48 @@ uv run tools/new_day.py day-33-var-2 --label "33 (2)" --copy-from day-33
 
 ## Публикация изменений
 
-Если меняли `index.html`, `manifest.json` или `service-worker.js`,
-увеличьте `VERSION` в `service-worker.js`. Иначе телефон может продолжать
-показывать старую версию из офлайн-кэша.
+Если меняли оболочку приложения, список ресурсов или стратегию кэширования, увеличьте `VERSION` в `service-worker.js`. Это заставит браузер создать новый офлайн-кэш.
 
-Затем:
+Сохраните изменения клиента (JSON-дни и настройки) обычным коммитом:
 
 ```bash
-git add -A
+git add content/days content/meta.json
 git commit -m "content: update client menu"
 git push
 ```
 
-### Деплой
+`content/days.json` добавлять в Git не нужно: файл генерируется во время сборки.
 
-Репозиторий — статический сайт. Удобные варианты:
+### Деплой через GitHub Actions
 
-- **GitHub Pages**: Settings → Pages → Deploy from branch `main` / root.
-- Любой static-хостинг (Netlify, Vercel, Cloudflare Pages, свой nginx).
+В репозитории откройте **Settings → Pages → Build and deployment → Source** и выберите **GitHub Actions**. После push в `main` (или `master`) workflow автоматически:
+
+1. проверит JSON-файлы дней;
+2. соберёт `content/days.json`;
+3. запустит Python- и JavaScript-тесты;
+4. подготовит статический сайт и опубликует его в GitHub Pages.
+
+Для pull request выполняются проверки и сборка индекса, но публикации нет.
+
+Service Worker кэширует сгенерированный индекс и все файлы дней, перечисленные в нём. Если хотя бы один обязательный файл отсутствует, установка новой версии Service Worker не завершится успешно — это предотвращает публикацию неполного офлайн-приложения.
 
 Service Worker и манифест рассчитаны на раздачу из корня сайта.
+
+### Переход существующего клиента на генерируемый индекс
+
+Если клиентский репозиторий ранее был создан через **Use this template**, файл `content/days.json` может уже отслеживаться Git. Перед первым обновлением из шаблона перестаньте отслеживать его:
+
+```bash
+git switch main
+git pull origin main
+git rm --cached content/days.json
+printf '\n# Generated at build time\ncontent/days.json\n' >> .gitignore
+git add .gitignore
+git commit -m "chore: stop tracking generated days index"
+rm content/days.json
+```
+
+После этого добавьте `upstream`, получите обновления шаблона и выполните merge. Перед локальным просмотром или публикацией индекс будет создан командой `uv run tools/build_index.py` или GitHub Actions. Исходные `content/days/*.json` эта миграция не затрагивает.
 
 ## Требования
 
@@ -130,8 +160,8 @@ Service Worker и манифест рассчитаны на раздачу из
 ```
 content/
   meta.json          # заголовки, типы приёмов пищи, версия формата данных (dataVersion)
-  days.json          # индекс (генерируется)
-  days/              # day-1.json, day-2.json, …
+  days.json          # генерируется в CI и не хранится в Git
+  days/              # исходные клиентские JSON: day-1.json, day-2.json, …
 tools/               # init_client, new_day, validate, build_index
 shared/              # css + js приложения
 icons/               # PWA-иконки
