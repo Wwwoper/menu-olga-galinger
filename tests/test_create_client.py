@@ -1,8 +1,6 @@
 import json
-from pathlib import Path
 
 import create_client
-
 
 GOOD_DAY = {
     "id": "day-1",
@@ -55,9 +53,13 @@ def configure_root(tmp_path, monkeypatch):
     return root, workbook
 
 
-def test_create_client_imports_valid_days_and_archives_source(tmp_path, monkeypatch, capsys):
+def test_create_client_imports_valid_days_and_archives_source(
+    tmp_path, monkeypatch, capsys
+):
     root, workbook = configure_root(tmp_path, monkeypatch)
-    monkeypatch.setattr(create_client.import_xlsx, "extract_client_menus", lambda *_: [GOOD_DAY])
+    monkeypatch.setattr(
+        create_client.import_xlsx, "extract_client_menus", lambda *_: [GOOD_DAY]
+    )
 
     def fake_init(name, short_name):
         assert name == "Анна Иванова"
@@ -78,10 +80,14 @@ def test_create_client_imports_valid_days_and_archives_source(tmp_path, monkeypa
     assert "Клиент успешно создан" in capsys.readouterr().out
 
 
-def test_create_client_rejects_invalid_import_before_initialization(tmp_path, monkeypatch):
+def test_create_client_rejects_invalid_import_before_initialization(
+    tmp_path, monkeypatch
+):
     root, workbook = configure_root(tmp_path, monkeypatch)
     invalid_day = {**GOOD_DAY, "id": "day-1-var-2", "variantOf": "day-1"}
-    monkeypatch.setattr(create_client.import_xlsx, "extract_client_menus", lambda *_: [invalid_day])
+    monkeypatch.setattr(
+        create_client.import_xlsx, "extract_client_menus", lambda *_: [invalid_day]
+    )
     called = False
 
     def fake_init(*_):
@@ -101,7 +107,9 @@ def test_create_client_rejects_invalid_import_before_initialization(tmp_path, mo
 def test_create_client_refuses_non_empty_days_directory(tmp_path, monkeypatch):
     root, workbook = configure_root(tmp_path, monkeypatch)
     (root / "content" / "days" / "day-9.json").write_text("{}", encoding="utf-8")
-    monkeypatch.setattr(create_client.import_xlsx, "extract_client_menus", lambda *_: [GOOD_DAY])
+    monkeypatch.setattr(
+        create_client.import_xlsx, "extract_client_menus", lambda *_: [GOOD_DAY]
+    )
 
     assert create_client.main(["--client", "Анна", "--yes"]) == 1
     assert workbook.exists()
@@ -123,13 +131,15 @@ def test_menu_number_does_not_treat_date_suffix_as_day_number():
     assert make_day_identity("меню 1.01.25", 7) == ("day-7", "7", None)
     assert fallback_start_number([Sheet("меню 1", "a"), Sheet("меню 44", "b")]) == 45
     assert make_day_identity("меню 33 (2вариант)", 8) == (
-        "day-33-var-2", "33 2)", "day-33"
+        "day-33-var-2",
+        "33 (2)",
+        "day-33",
     )
 
 
 def test_import_writer_never_overwrites_existing_json(tmp_path):
-    from import_xlsx import write_json_files
     import pytest
+    from import_xlsx import write_json_files
 
     output = tmp_path / "days"
     output.mkdir()
