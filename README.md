@@ -141,7 +141,7 @@ uv run tools/new_day.py day-33-var-2 --label "33 (2)" --copy-from day-33
 ```bash
 git add content/days content/meta.json
 git commit -m "content: update client menu"
-git push
+git push origin main
 ```
 
 `content/days.json` добавлять в Git не нужно: файл генерируется во время сборки.
@@ -163,7 +163,7 @@ Service Worker и манифест рассчитаны на раздачу из
 
 ### Переход существующего клиента на генерируемый индекс
 
-Если клиентский репозиторий ранее был создан через **Use this template**, файл `content/days.json` может уже отслеживаться Git. Перед первым обновлением из шаблона перестаньте отслеживать его:
+В старых клиентских репозиториях, созданных через **Use this template**, файл `content/days.json` может уже отслеживаться Git. Перед первым обновлением из шаблона перестаньте отслеживать его:
 
 ```bash
 git switch main

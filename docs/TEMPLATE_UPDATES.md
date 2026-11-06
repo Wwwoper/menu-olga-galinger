@@ -4,14 +4,30 @@
 
 ## Первоначальная настройка remote
 
-Если `upstream` ещё не настроен:
+В клиентском репозитории `origin` должен указывать на репозиторий клиента,
+а `upstream` — на общий шаблон. Проверьте URL:
 
 ```bash
-git remote add upstream https://github.com/Wwwoper/template-menu.git
 git remote -v
 ```
 
-`origin` должен указывать на репозиторий клиента, `upstream` — на основной шаблон.
+Если `upstream` ещё не настроен, добавьте его:
+
+```bash
+git remote add upstream https://github.com/Wwwoper/template-menu.git
+```
+
+Зафиксируйте безопасное направление push по умолчанию:
+
+```bash
+git config --local remote.pushDefault origin
+git config --local push.default simple
+git config --get remote.pushDefault
+```
+
+Последняя команда должна вывести `origin`. Не используйте `git remote rename origin upstream`:
+при таком переименовании Git может переключить upstream локальной ветки на шаблон.
+Если `origin` указывает не на клиентский репозиторий, исправьте URL до продолжения.
 
 ## Получение обновления
 
@@ -20,7 +36,7 @@ git remote -v
 ```bash
 git status --short
 git switch main
-git pull origin main
+git pull --ff-only origin main
 git fetch upstream
 ```
 

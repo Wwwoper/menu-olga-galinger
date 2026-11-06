@@ -8,18 +8,42 @@
 
 ## 2. Клонировать шаблон и подключить репозиторий клиента
 
+Клонируйте шаблон, затем измените URL уже созданного `origin`, чтобы он указывал
+на пустой клиентский репозиторий. Не переименовывайте `origin` в `upstream`:
+Git может перенести настройку отслеживания локальной ветки на `upstream`, и обычный
+`git push` тогда отправит клиентские коммиты в общий шаблон.
+
 ```bash
 git clone https://github.com/Wwwoper/template-menu.git menu-anna
 cd menu-anna
-git remote rename origin upstream
-git remote add origin https://github.com/OWNER/menu-anna.git
+git remote set-url origin https://github.com/OWNER/menu-anna.git
+git remote add upstream https://github.com/Wwwoper/template-menu.git
 ```
 
-Замените `OWNER/menu-anna` на владельца и имя созданного репозитория. `upstream` — основной шаблон, `origin` — репозиторий клиента. Проверьте настройки:
+Замените `OWNER/menu-anna` на владельца и имя созданного репозитория. Настройте
+репозиторий так, чтобы push по умолчанию направлялся только в `origin`:
+
+```bash
+git config --local remote.pushDefault origin
+git config --local push.default simple
+```
+
+Проверьте настройки до импорта и первой отправки:
 
 ```bash
 git remote -v
+git config --get remote.pushDefault
+git branch -vv
 ```
+
+Ожидаемый результат: `origin` указывает на `https://github.com/OWNER/menu-anna.git`,
+`upstream` — на `https://github.com/Wwwoper/template-menu.git`, а
+`remote.pushDefault` выводит `origin`. Если URL перепутаны, исправьте их до продолжения.
+
+До первой отправки локальная ссылка `origin/main` ещё может содержать состояние,
+полученное при клонировании шаблона. Это нормально: первая команда
+`git push -u origin main` ниже создаст ветку `main` в клиентском репозитории и
+настроит её отслеживание.
 
 ## 3. Подготовить Excel и создать клиента
 

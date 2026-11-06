@@ -6,7 +6,7 @@
 uv run tools/new_day.py day-45 --label 45 --copy-from day-44
 # отредактируйте content/days/day-45.json
 uv run tools/validate.py
-git add content/days && git commit -m "content: add day 45" && git push
+git add content/days && git commit -m "content: add day 45" && git push origin main
 ```
 
 `new_day.py` локально пересобирает `content/days.json` (навигация, порядок и строка поиска). Этот файл генерируется и исключён из Git. При публикации GitHub Actions создаёт его заново из JSON-файлов дней.
