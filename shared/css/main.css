@@ -292,11 +292,18 @@ td{padding:6px 0;border-bottom:1px solid var(--border)}
     bottom:0;
     width:min(84vw,320px);
     max-width:320px;
+    z-index:100;
+    visibility:hidden;
     transform:translateX(-100%);
     box-shadow:2px 0 12px rgba(0,0,0,.35);
     padding-top:12px;
+    transition:transform .2s ease, visibility 0s linear .2s;
   }
-  #sidebar.open{transform:translateX(0)}
+  #sidebar.open{
+    visibility:visible;
+    transform:translateX(0);
+    transition:transform .2s ease, visibility 0s;
+  }
   #sidebar h1{display:none}
   #search-box{margin:8px 16px 6px}
 
@@ -843,6 +850,7 @@ td{padding:6px 0;border-bottom:1px solid var(--border)}
 }
 
 @media (prefers-reduced-motion: reduce) {
+  #sidebar { transition: none; }
   #mobile-topbar,
   #menu-toggle,
   .day-nav-btn,
