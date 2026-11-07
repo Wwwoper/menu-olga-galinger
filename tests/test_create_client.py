@@ -22,9 +22,6 @@ def configure_root(tmp_path, monkeypatch):
     days_dir = root / "content" / "days"
     input_dir.mkdir()
     days_dir.mkdir(parents=True)
-    (root / "content" / "meta.json").write_text('{"title":"Шаблон"}', encoding="utf-8")
-    (root / "manifest.json").write_text('{"name":"Шаблон"}', encoding="utf-8")
-    (root / "index.html").write_text("<title>Шаблон</title>", encoding="utf-8")
     (root / "TEMPLATE_VERSION").write_text("1.0.0\n", encoding="utf-8")
 
     monkeypatch.setattr(create_client, "ROOT", root)
@@ -41,9 +38,7 @@ def configure_root(tmp_path, monkeypatch):
         create_client,
         "CONFIG_FILES",
         (
-            root / "content" / "meta.json",
-            root / "manifest.json",
-            root / "index.html",
+            root / "client.json",
             root / "CLIENT_TEMPLATE_VERSION",
             root / "content" / "days.json",
         ),
