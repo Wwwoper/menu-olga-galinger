@@ -35,8 +35,16 @@ jobs:
       - name: Validate client data
         run: uv run tools/validate.py
 
+      - name: Validate client configuration
+        if: github.repository != 'Wwwoper/template-menu'
+        run: test -f client.json
+
       - name: Generate days index
         run: uv run tools/build_index.py
+
+      - name: Generate PWA manifest
+        if: github.repository != 'Wwwoper/template-menu'
+        run: uv run tools/build_manifest.py
 
       - name: Run Python tests
         run: uv run pytest
@@ -53,7 +61,7 @@ jobs:
         if: github.repository != 'Wwwoper/template-menu' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         run: |
           mkdir -p _site
-          cp -R index.html manifest.json service-worker.js shared icons content _site/
+          cp -R index.html manifest.json client.json client-assets service-worker.js shared content _site/
 
       - name: Upload Pages artifact
         if: github.repository != 'Wwwoper/template-menu' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')

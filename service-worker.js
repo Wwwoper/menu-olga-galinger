@@ -2,7 +2,7 @@
 // соединении (> 4 с) — копия из кэша. При установке кэшируются оболочка и ВСЕ дни.
 // Меняете этот файл или список SHELL? Увеличьте VERSION.
 // На localhost (локальная разработка) кэш отключён: файлы всегда берутся с сервера.
-const VERSION = 'v5';
+const VERSION = 'v6';
 const CACHE = `food-flow-${VERSION}`;
 const NETWORK_TIMEOUT_MS = 4000;
 const DEV = ['localhost', '127.0.0.1', '[::1]'].includes(self.location.hostname);
@@ -11,6 +11,7 @@ const SHELL = [
   './',
   'index.html',
   'manifest.json',
+  'client.json',
   'shared/css/main.css',
   'shared/css/search.css',
   'shared/js/app.js',
@@ -22,12 +23,12 @@ const SHELL = [
   'shared/js/state.js',
   'shared/js/store.js',
   'content/meta.json',
-  'icons/mysite-192x192.png',
-  'icons/mysite-512x512.png',
-  'icons/mysite-180x180.png',
-  'icons/mysite-32x32.png',
-  'icons/mysite-16x16.png',
-  'icons/mysite.ico',
+  'shared/assets/default/favicon.ico',
+  'shared/assets/default/favicon-16x16.png',
+  'shared/assets/default/favicon-32x32.png',
+  'shared/assets/default/icon-192x192.png',
+  'shared/assets/default/icon-512x512.png',
+  'shared/assets/default/apple-touch-icon.png',
 ];
 
 self.addEventListener('install', (event) => {
@@ -36,7 +37,21 @@ self.addEventListener('install', (event) => {
     const cache = await caches.open(CACHE);
     // Оболочка обязательна: ошибка отсутствующего файла должна сорвать установку,
     // а не оставлять частично работающий офлайн-кэш.
-    await cache.addAll(SHELL.map((url) => new Request(url, { cache: 'reload' })));
+    const shell = SHELL.filter((url) => url !== 'client.json' && url !== 'manifest.json');
+    await cache.addAll(shell.map((url) => new Request(url, { cache: 'reload' })));
+
+    // client.json и manifest обязательны в клиентском деплое, но отсутствуют
+    // в исходном репозитории шаблона. При локальном просмотре шаблона пропускаем их.
+    const clientResponse = await fetch('client.json', { cache: 'reload' });
+    if (clientResponse.ok) {
+      const client = await clientResponse.clone().json();
+      await cache.put('client.json', clientResponse);
+      const assets = Object.values(client.assets || {});
+      if (assets.length) await cache.addAll(assets);
+      const manifestResponse = await fetch('manifest.json', { cache: 'reload' });
+      if (!manifestResponse.ok) throw new Error(`Не удалось загрузить manifest.json: HTTP ${manifestResponse.status}`);
+      await cache.put('manifest.json', manifestResponse);
+    }
 
     const response = await fetch('content/days.json', { cache: 'reload' });
     if (!response.ok) throw new Error(`Не удалось загрузить content/days.json: HTTP ${response.status}`);
