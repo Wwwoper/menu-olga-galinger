@@ -62,21 +62,67 @@ function buildTools() {
   return tools;
 }
 
+async function loadClientConfig() {
+  try {
+    const response = await fetch(new URL('../../client.json', import.meta.url), { cache: 'no-cache' });
+    if (!response.ok) throw new Error(`client.json: HTTP ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    if (error instanceof TypeError || String(error.message).includes('HTTP 404')) {
+      return {
+        name: 'Меню', shortName: 'Меню', themeColor: '#2f7a4f',
+        assets: {
+          favicon: 'shared/assets/default/favicon.ico',
+          favicon16: 'shared/assets/default/favicon-16x16.png',
+          favicon32: 'shared/assets/default/favicon-32x32.png',
+          icon192: 'shared/assets/default/icon-192x192.png',
+          icon512: 'shared/assets/default/icon-512x512.png',
+          appleTouchIcon: 'shared/assets/default/apple-touch-icon.png',
+        },
+      };
+    }
+    throw error;
+  }
+}
+
+function applyClientConfig(config) {
+  document.title = config.name;
+  const headerTitle = document.querySelector('#top-header h1');
+  if (headerTitle) headerTitle.textContent = config.name;
+  const sidebarTitle = document.querySelector('#sidebar h1');
+  if (sidebarTitle?.firstChild) sidebarTitle.firstChild.textContent = `${config.shortName} `;
+  const mobileTitle = document.getElementById('client-apple-title');
+  if (mobileTitle) mobileTitle.content = config.shortName;
+  const theme = document.getElementById('client-theme-color');
+  if (theme) theme.content = config.themeColor;
+  const links = {
+    'client-favicon': config.assets.favicon,
+    'client-favicon-16': config.assets.favicon16,
+    'client-favicon-32': config.assets.favicon32,
+    'client-favicon-192': config.assets.icon192,
+    'client-favicon-512': config.assets.icon512,
+    'client-apple-touch-icon': config.assets.appleTouchIcon,
+  };
+  for (const [id, href] of Object.entries(links)) {
+    const link = document.getElementById(id);
+    if (link) link.href = href;
+  }
+}
+
 export async function initShell() {
-  const [meta, index] = await Promise.all([loadMeta(), loadIndex()]);
+  const [meta, index, client] = await Promise.all([loadMeta(), loadIndex(), loadClientConfig()]);
+  applyClientConfig(client);
   registerIndex(index);
 
   const n = index.mainDays;
-  document.title = fill(meta.pageTitle, n);
+  document.title = `${client.name} · ${fill(meta.pageTitle, n)}`;
   const sidebarTitle = document.querySelector('#sidebar h1');
   if (sidebarTitle && sidebarTitle.firstChild) {
-    sidebarTitle.firstChild.textContent = `${fill(meta.sidebarTitle, n)} `;
+    sidebarTitle.firstChild.textContent = `${client.shortName} `;
   }
   const mobileDay = document.getElementById('mobile-current-day');
   if (mobileDay) mobileDay.textContent = fill(meta.mobileDefault, n);
-  const headerTitle = document.querySelector('#top-header h1');
   const headerSub = document.querySelector('#top-header p');
-  if (headerTitle) headerTitle.textContent = meta.title;
   if (headerSub) headerSub.textContent = fill(meta.subtitle, n);
 
   const navRoot = document.getElementById('nav-links');
@@ -128,5 +174,5 @@ export async function initShell() {
   navRoot.append(navFrag);
   end.before(secFrag);
 
-  return { meta, index, DAY_IDS: index.days.map((d) => d.id) };
+  return { meta, index, client, DAY_IDS: index.days.map((d) => d.id) };
 }

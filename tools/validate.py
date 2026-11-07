@@ -34,6 +34,12 @@ def main() -> int:
             )
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
         errors.append(f"content/meta.json: не удалось прочитать конфигурацию: {exc}")
+    if (Path(__file__).resolve().parent.parent / "client.json").exists():
+        try:
+            from client_config import load_client_config
+            load_client_config()
+        except ValueError as exc:
+            errors.append(str(exc))
     errors.extend(validate_day_collection(days))
     for error in errors:
         print(" -", error)

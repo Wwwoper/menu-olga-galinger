@@ -3,24 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Меню клиента</title>
-<meta name="theme-color" content="#2f7a4f">
+<title>Меню</title>
+<meta name="theme-color" content="#2f7a4f" id="client-theme-color">
 
-<!-- Favicon -->
-<link rel="icon" href="icons/mysite.ico">
-<link rel="icon" type="image/png" sizes="16x16" href="icons/mysite-16x16.png">
-<link rel="icon" type="image/png" sizes="32x32" href="icons/mysite-32x32.png">
-<link rel="icon" type="image/png" sizes="192x192" href="icons/mysite-192x192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="icons/mysite-512x512.png">
-
-<!-- Apple Touch Icon -->
-<link rel="apple-touch-icon" sizes="180x180" href="icons/mysite-180x180.png">
+<!-- Общие fallback-иконки; клиентские пути задаются через client.json -->
+<link rel="icon" href="shared/assets/default/favicon.ico" id="client-favicon">
+<link rel="icon" type="image/png" sizes="16x16" href="shared/assets/default/favicon-16x16.png" id="client-favicon-16">
+<link rel="icon" type="image/png" sizes="32x32" href="shared/assets/default/favicon-32x32.png" id="client-favicon-32">
+<link rel="icon" type="image/png" sizes="192x192" href="shared/assets/default/icon-192x192.png" id="client-favicon-192">
+<link rel="icon" type="image/png" sizes="512x512" href="shared/assets/default/icon-512x512.png" id="client-favicon-512">
+<link rel="apple-touch-icon" sizes="180x180" href="shared/assets/default/apple-touch-icon.png" id="client-apple-touch-icon">
 
 <!-- PWA & Mobile -->
 <link rel="manifest" href="manifest.json">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Меню">
+<meta name="apple-mobile-web-app-title" content="Меню" id="client-apple-title">
 
 <!-- Styles -->
 <link rel="stylesheet" href="shared/css/main.css">
@@ -57,8 +55,8 @@
 
 <div id="content">
   <div id="top-header">
-    <h1>Меню клиента</h1>
-    <p>Полное меню · Завтрак, обед, ужин и перекус для каждого дня</p>
+    <h1>Меню</h1>
+    <p>Завтрак, обед, ужин и перекус для каждого дня</p>
   </div>
 
 <div id="today-banner" aria-live="polite"></div>

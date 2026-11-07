@@ -1,6 +1,5 @@
 {
   "pageTitle": "Меню на {count} {days}",
-  "title": "Меню клиента",
   "subtitle": "Полное меню на {count} {days} · Завтрак, обед, ужин и перекус для каждого дня",
   "sidebarTitle": "Меню {count} {days}",
   "mobileDefault": "Меню на {count} {days}",

@@ -33,9 +33,7 @@ from common import (  # noqa: E402
 
 
 CONFIG_FILES = (
-    ROOT / "content" / "meta.json",
-    ROOT / "manifest.json",
-    ROOT / "index.html",
+    ROOT / "client.json",
     CLIENT_TEMPLATE_VERSION_PATH,
     INDEX_FILE,
 )
@@ -149,6 +147,10 @@ def main(argv: list[str] | None = None) -> int:
             if not short_name:
                 raise ValueError("Короткое имя не должно быть пустым")
 
+        if (ROOT / "client.json").exists() or (ROOT / "client-assets").exists():
+            raise FileExistsError(
+                "Найдены client.json или client-assets/. Для нового клиента используйте чистую копию шаблона."
+            )
         if CLIENT_TEMPLATE_VERSION_PATH.exists():
             raise FileExistsError(
                 "Похоже, этот репозиторий уже инициализирован: найден CLIENT_TEMPLATE_VERSION. "
@@ -210,6 +212,7 @@ def main(argv: list[str] | None = None) -> int:
             for path in created_days:
                 path.unlink(missing_ok=True)
             restore_files(snapshot)
+            shutil.rmtree(ROOT / "client-assets", ignore_errors=True)
             raise
 
         ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
