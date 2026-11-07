@@ -89,7 +89,7 @@ uv run tools/create_client.py
 `icon-192x192.png`, `icon-512x512.png` и `apple-touch-icon.png`. Эти файлы и
 `client.json` должны оставаться в Git клиентского репозитория.
 
-Скрипт создаст `client.json`, скопирует нейтральные иконки в `client-assets/`, запишет `CLIENT_TEMPLATE_VERSION`, создаст JSON-дни в `content/days/`, проверит данные и построит локальный индекс. После успешного импорта исходная книга будет перемещена в `input/archive/`.
+Скрипт создаст `client.json`, скопирует нейтральные иконки в `client-assets/`, запишет `CLIENT_TEMPLATE_VERSION`, создаст JSON-дни в `content/days/`, проверит данные и построит локальный индекс. `manifest.json` локально можно создать отдельно командой `uv run tools/build_manifest.py`; в CI он создаётся автоматически перед публикацией. После успешного импорта исходная книга будет перемещена в `input/archive/`.
 
 **Важно:** `input/` целиком исключена из Git. Не переносите исходные таблицы в другие отслеживаемые каталоги и не добавляйте их в коммиты: они могут содержать персональные данные и учётные сведения.
 
@@ -110,7 +110,7 @@ git status --short
 
 Проверьте название клиента и содержимое `content/days/`. Исходный XLSX и его архив не должны отображаться в `git status`.
 
-`client.json` и `client-assets/` — клиентские файлы, их нужно коммитить. `manifest.json` генерируется из `client.json` и исключён из Git. `content/days.json` — генерируемый индекс, он также исключён из Git. В репозитории хранятся исходные JSON-файлы из `content/days/`.
+`client.json`, `client-assets/`, `CLIENT_TEMPLATE_VERSION` и исходные JSON-файлы из `content/days/` нужно коммитить. `manifest.json` генерируется из `client.json` и исключён из Git. `content/days.json` — генерируемый индекс, он также исключён из Git.
 
 ## 5. Включить GitHub Pages
 

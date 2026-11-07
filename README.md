@@ -135,7 +135,7 @@ uv run tools/new_day.py day-33-var-2 --label "33 (2)" --copy-from day-33
 Сохраните изменения клиента (JSON-дни и настройки) обычным коммитом:
 
 ```bash
-git add content/days content/meta.json
+git add content/days client.json client-assets
 git commit -m "content: update client menu"
 git push origin main
 ```
@@ -156,22 +156,6 @@ git push origin main
 Service Worker кэширует сгенерированный индекс и все файлы дней, перечисленные в нём. Если хотя бы один обязательный файл отсутствует, установка новой версии Service Worker не завершится успешно — это предотвращает публикацию неполного офлайн-приложения.
 
 Service Worker и манифест рассчитаны на раздачу из корня сайта.
-
-### Переход существующего клиента на генерируемый индекс
-
-В старых клиентских репозиториях, созданных через **Use this template**, файл `content/days.json` может уже отслеживаться Git. Перед первым обновлением из шаблона перестаньте отслеживать его:
-
-```bash
-git switch main
-git pull origin main
-git rm --cached content/days.json
-printf '\n# Generated at build time\ncontent/days.json\n' >> .gitignore
-git add .gitignore
-git commit -m "chore: stop tracking generated days index"
-rm content/days.json
-```
-
-После этого добавьте `upstream`, получите обновления шаблона и выполните merge. Перед локальным просмотром или публикацией индекс будет создан командой `uv run tools/build_index.py` или GitHub Actions. Исходные `content/days/*.json` эта миграция не затрагивает.
 
 ## Требования
 
