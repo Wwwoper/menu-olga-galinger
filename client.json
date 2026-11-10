@@ -1,0 +1,14 @@
+{
+  "name": "Ольга Галингер",
+  "shortName": "Ольга Галингер",
+  "description": "Меню питания: завтрак, обед, ужин и перекус на каждый день",
+  "themeColor": "#2f7a4f",
+  "assets": {
+    "favicon": "client-assets/favicon.ico",
+    "favicon16": "client-assets/favicon-16x16.png",
+    "favicon32": "client-assets/favicon-32x32.png",
+    "icon192": "client-assets/icon-192x192.png",
+    "icon512": "client-assets/icon-512x512.png",
+    "appleTouchIcon": "client-assets/apple-touch-icon.png"
+  }
+}
